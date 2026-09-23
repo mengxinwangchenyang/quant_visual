@@ -1,0 +1,132 @@
+<!doctype html>
+<html lang="zh-CN">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <meta name="color-scheme" content="light" />
+  <title>十三策略每日买入</title>
+  <link rel="stylesheet" href="./daily_buys.css" />
+</head>
+<body>
+  <main class="shell">
+    <header class="topbar">
+      <div>
+        <p class="context-label">虚拟 miniQMT</p>
+        <h1>每日买入</h1>
+      </div>
+      <div class="topbar-controls">
+        <label class="page-switcher"><span>页面导航</span><select id="pageSwitcher" aria-label="切换页面"><optgroup label="每日"><option value="daily_buys.html">每日买入</option><option value="daily_sells.html">每日卖出</option><option value="daily_report.html">每日简报</option></optgroup><optgroup label="每周"><option value="weekly_buys.html">每周买入</option><option value="weekly_sells.html">每周卖出</option><option value="weekly_report.html">每周简报</option></optgroup><optgroup label="累计"><option value="cumulative_buys.html">累计买入</option><option value="cumulative_sells.html">累计卖出</option><option value="cumulative_report.html">累计简报</option></optgroup></select></label>
+        <label class="date-control">
+          <span>交易日</span>
+          <select id="dateSelect" aria-label="选择交易日"></select>
+        </label>
+        <div class="sync-state">
+          <span id="syncBadge" class="status-badge">载入中</span>
+          <span id="generatedAt">正在读取快照</span>
+        </div>
+      </div>
+    </header>
+
+    <section id="loadingState" class="loading-state" aria-live="polite">
+      <div class="skeleton skeleton-wide"></div>
+      <div class="skeleton-grid">
+        <div class="skeleton"></div><div class="skeleton"></div><div class="skeleton"></div><div class="skeleton"></div>
+      </div>
+    </section>
+
+    <div id="dashboard" hidden>
+      <section class="summary-band" aria-label="当日买入汇总">
+        <div class="summary-date">
+          <span>执行日期</span>
+          <strong id="tradeDate">-</strong>
+          <small id="completionState">-</small>
+        </div>
+        <dl class="metrics">
+          <div><dt>候选</dt><dd id="candidateCount">0</dd></div>
+          <div><dt>通过风控</dt><dd id="acceptedCount">0</dd></div>
+          <div><dt>买入委托</dt><dd id="submittedCount">0</dd></div>
+          <div><dt>实际成交</dt><dd id="filledCount">0</dd></div>
+          <div><dt>成交金额</dt><dd id="filledAmount">¥0</dd></div>
+        </dl>
+      </section>
+
+      <nav id="strategyTabs" class="strategy-tabs" aria-label="策略筛选"></nav>
+
+      <section class="data-section" aria-labelledby="overviewTitle">
+        <div class="section-heading">
+          <div>
+            <h2 id="overviewTitle">十三策略执行概览</h2>
+            <p>选股、风控与下单结果</p>
+          </div>
+          <span id="scheduleLabel" class="schedule-label"></span>
+        </div>
+        <div class="table-wrap">
+          <table>
+            <thead>
+              <tr>
+                <th>策略</th><th>策略简述</th><th class="number">候选</th><th class="number">通过</th><th class="number">委托</th><th class="number">成交</th><th class="number">卖前现金</th><th class="number">卖后现金</th><th class="number">买前现金</th><th class="number">买后现金</th><th>结果</th>
+              </tr>
+            </thead>
+            <tbody id="strategyRows"></tbody>
+          </table>
+        </div>
+      </section>
+
+      <section class="data-section" aria-labelledby="candidateTitle">
+        <div class="section-heading">
+          <div>
+            <h2 id="candidateTitle">候选股票</h2>
+            <p id="candidateCaption">最近3个交易日分钟K线与成交量</p>
+          </div>
+          <div class="candidate-heading-actions">
+            <span id="candidateCountLabel" class="schedule-label"></span>
+            <button id="candidateToggleAll" class="candidate-toggle" type="button" aria-controls="candidateList" aria-expanded="false">全部展开</button>
+          </div>
+        </div>
+        <div id="candidateEmpty" class="empty-state" hidden>
+          <strong>当日没有候选股票明细</strong>
+          <span>该交易日尚未保存逐股决策记录</span>
+        </div>
+        <div id="candidateList" class="candidate-list"></div>
+      </section>
+
+      <section class="data-section" aria-labelledby="detailTitle">
+        <div class="section-heading">
+          <div>
+            <h2 id="detailTitle">买入明细</h2>
+            <p id="detailCaption">当日实际委托与成交</p>
+          </div>
+        </div>
+        <div id="emptyState" class="empty-state" hidden>
+          <strong>当日没有买入委托</strong>
+          <span id="emptyReason">候选股票未通过买入风控</span>
+        </div>
+        <div id="detailTable" class="table-wrap">
+          <table>
+            <thead>
+              <tr>
+                <th>策略</th><th>时间</th><th>股票</th><th>委托号</th><th>状态</th><th class="number">委托股数</th><th class="number">成交股数</th><th class="number">成交均价</th><th class="number">成交金额</th>
+              </tr>
+            </thead>
+            <tbody id="buyRows"></tbody>
+          </table>
+        </div>
+      </section>
+
+    </div>
+
+    <section id="errorState" class="error-state" hidden role="alert">
+      <strong>快照读取失败</strong>
+      <span id="errorMessage">请确认日终快照文件已经生成。</span>
+    </section>
+  </main>
+  <footer class="page-footer">
+    <a href="https://www.tradingview.com/" target="_blank" rel="noreferrer">图表由 TradingView Lightweight Charts 提供</a>
+  </footer>
+  <script src="./vendor/lightweight-charts.js"></script>
+  <script src="./chart_day_separators.js"></script>
+  <script src="./strategy_descriptions.js?v=20260817"></script>
+  <script src="./page_navigation.js"></script>
+  <script src="./daily_buys.js?v=20260907-cash-flow"></script>
+</body>
+</html>

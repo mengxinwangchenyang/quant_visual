@@ -1,0 +1,11 @@
+{
+  "scripts": {
+    "build:visual-css": "tailwindcss -i ./visual/tailwind.input.css -o ./visual/styles.css --minify"
+  },
+  "devDependencies": {
+    "tailwindcss": "^3.4.17"
+  },
+  "dependencies": {
+    "lightweight-charts": "^5.2.0"
+  }
+}

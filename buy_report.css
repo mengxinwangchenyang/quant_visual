@@ -1,0 +1,166 @@
+.report-shell { max-width: 1240px; }
+.report-topbar { align-items: center; }
+.report-actions { display: flex; flex-wrap: wrap; align-items: center; justify-content: flex-end; gap: 10px; }
+.pdf-button { display: inline-flex; align-items: center; height: 38px; padding: 0 12px; border: 1px solid var(--accent); border-radius: var(--radius); background: var(--accent); color: #fff; font-size: 12px; font-weight: 650; cursor: pointer; text-decoration: none; }
+.pdf-button:hover { background: #06694e; }
+.pdf-button:active { transform: translateY(1px); }
+.pdf-button:focus-visible { outline: 3px solid rgba(8, 122, 91, .22); outline-offset: 2px; }
+.report-lead { display: grid; grid-template-columns: 1fr 1fr; margin-top: 22px; border: 1px solid var(--line); border-radius: var(--radius); background: var(--surface); }
+.report-lead > div { display: grid; align-content: center; gap: 5px; min-height: 142px; padding: 24px 28px; }
+.report-lead > div + div { border-left: 1px solid var(--line); }
+.report-lead strong { font-size: 28px; line-height: 1.2; }
+.report-lead p { margin: 0; color: var(--muted); font-size: 12px; }
+.report-kicker, .report-verdict span { color: var(--muted); font-size: 12px; }
+.report-verdict strong { color: var(--accent); }
+.report-metrics { display: grid; grid-template-columns: repeat(5, 1fr); margin: 14px 0 0; border: 1px solid var(--line); border-radius: var(--radius); background: var(--surface); }
+.report-metrics > div { display: grid; gap: 5px; min-height: 104px; padding: 18px 20px; border-right: 1px solid var(--line); }
+.report-metrics > div:last-child { border-right: 0; }
+.report-metrics dt, .report-metrics small { color: var(--muted); font-size: 12px; }
+.report-metrics dd { margin: 0; font-size: 25px; font-weight: 680; font-variant-numeric: tabular-nums; }
+.report-section { margin-top: 14px; }
+.report-table { min-width: 1040px; }
+.report-table td { height: 68px; }
+.report-table .buy-list { max-width: 300px; }
+.buy-list { display: flex; flex-wrap: wrap; gap: 5px; }
+.buy-chip { display: inline-flex; align-items: center; min-height: 25px; padding: 3px 7px; border-radius: 4px; background: var(--accent-soft); color: var(--accent); font-size: 12px; font-weight: 650; }
+.buy-none { color: var(--muted); font-size: 12px; }
+.report-buy-section { margin-top: 14px; border-top: 3px solid var(--accent); border-radius: var(--radius); background: var(--surface); box-shadow: 0 0 0 1px var(--line); overflow: hidden; }
+.report-buy-heading { display: flex; align-items: center; justify-content: space-between; gap: 18px; padding: 18px 20px; border-bottom: 1px solid var(--line); }
+.report-buy-heading h2 { margin: 0; font-size: 18px; }
+.report-buy-heading p { margin: 4px 0 0; color: var(--muted); font-size: 12px; }
+.buy-groups { display: grid; grid-template-columns: repeat(3, 1fr); }
+.buy-group { min-height: 150px; padding: 18px 20px; border-right: 1px solid var(--line); border-bottom: 1px solid var(--line); }
+.buy-group:nth-child(3n) { border-right: 0; }
+.buy-group:nth-last-child(-n+3) { border-bottom: 0; }
+.buy-group-head { display: flex; align-items: baseline; justify-content: space-between; gap: 10px; margin-bottom: 12px; }
+.buy-group-head strong { font-size: 14px; }
+.buy-group-head span { color: var(--muted); font-size: 11px; }
+.buy-stock { display: grid; grid-template-columns: minmax(0, 1fr) auto; gap: 4px 12px; padding: 8px 0; border-top: 1px solid var(--line); }
+.buy-stock:first-of-type { border-top: 0; }
+.buy-stock strong { font-size: 13px; }
+.buy-stock .stock-name { color: var(--muted); font-size: 11px; }
+.buy-stock .stock-quote { grid-column: 2; grid-row: 1 / span 2; display: grid; justify-items: end; align-self: center; gap: 4px; }
+.buy-stock .stock-price { font-size: 13px; font-weight: 650; font-variant-numeric: tabular-nums; }
+.previous-close { color: var(--muted); font-size: 10px; font-variant-numeric: tabular-nums; }
+.change-tag { display: inline-flex; align-items: center; min-height: 20px; padding: 2px 5px; border-radius: 3px; font-size: 11px; font-weight: 680; font-variant-numeric: tabular-nums; }
+.change-tag.up { background: var(--danger-soft); color: var(--danger); }
+.change-tag.down { background: var(--accent-soft); color: var(--accent); }
+.change-tag.flat { background: var(--surface-soft); color: var(--muted); border: 1px solid var(--line); }
+.group-empty { margin: 24px 0 0; color: var(--muted); font-size: 12px; }
+.report-note { display: grid; grid-template-columns: auto 1fr; gap: 14px; margin-top: 14px; padding: 15px 18px; border: 1px solid var(--line); border-radius: var(--radius); background: var(--surface-soft); }
+.report-note strong { font-size: 12px; white-space: nowrap; }
+.report-note p { margin: 0; color: var(--muted); font-size: 12px; line-height: 1.7; }
+.sell-estimate-section { margin-top: 14px; border-top: 3px solid #9a5b05; }
+.sell-estimate-badge { background: var(--warning-soft); color: var(--warning); }
+.sell-estimate-metrics { display: grid; grid-template-columns: repeat(5, 1fr); margin: 0; border-bottom: 1px solid var(--line); }
+.sell-estimate-metrics > div { display: grid; gap: 4px; min-height: 82px; padding: 14px 18px; border-right: 1px solid var(--line); }
+.sell-estimate-metrics > div:last-child { border-right: 0; }
+.sell-estimate-metrics dt, .sell-estimate-metrics small { color: var(--muted); font-size: 11px; }
+.sell-estimate-metrics dd { margin: 0; font-size: 20px; font-weight: 680; font-variant-numeric: tabular-nums; }
+.sell-strategy-table { min-width: 920px; }
+.sell-strategy-table td { height: 48px; }
+.sell-position-heading { display: flex; align-items: center; justify-content: space-between; gap: 16px; padding: 14px 18px; border-top: 1px solid var(--line); border-bottom: 1px solid var(--line); }
+.sell-position-heading strong { font-size: 13px; }
+.sell-position-heading span { color: var(--muted); font-size: 11px; }
+.sell-position-table { min-width: 1120px; }
+.sell-position-table td { height: 54px; }
+.sell-loading { color: var(--muted); text-align: center; }
+.estimated-sell-label { display: inline-flex; align-items: center; min-height: 22px; padding: 2px 6px; border-radius: 4px; background: var(--warning-soft); color: var(--warning); font-size: 11px; font-weight: 650; }
+.estimated-sell-label.done { background: var(--accent-soft); color: var(--accent); }
+.pnl-positive { color: var(--danger); font-weight: 650; }
+.pnl-negative { color: var(--accent); font-weight: 650; }
+.pnl-flat { color: var(--muted); }
+
+@media (max-width: 900px) {
+  .report-metrics { grid-template-columns: repeat(3, 1fr); }
+  .sell-estimate-metrics { grid-template-columns: repeat(3, 1fr); }
+  .sell-estimate-metrics > div:nth-child(3) { border-right: 0; }
+  .sell-estimate-metrics > div:nth-child(n+4) { border-top: 1px solid var(--line); }
+  .report-metrics > div:nth-child(3) { border-right: 0; }
+  .report-metrics > div:nth-child(n+4) { border-top: 1px solid var(--line); }
+  .buy-groups { grid-template-columns: repeat(2, 1fr); }
+  .buy-group:nth-child(3n) { border-right: 1px solid var(--line); }
+  .buy-group:nth-child(2n) { border-right: 0; }
+  .buy-group:nth-last-child(-n+3) { border-bottom: 1px solid var(--line); }
+  .buy-group:nth-last-child(-n+2) { border-bottom: 0; }
+}
+
+@page { size: A4 landscape; margin: 8mm; }
+@media print {
+  :root { --canvas: #fff; }
+  body { min-width: 0; background: #fff; print-color-adjust: exact; -webkit-print-color-adjust: exact; }
+  .report-shell { width: 100%; max-width: none; padding: 0; }
+  .report-topbar { padding-bottom: 8px; }
+  .report-topbar h1 { font-size: 22px; }
+  .report-actions, .loading-state, .error-state, .report-note { display: none !important; }
+  .report-lead { grid-template-columns: 1fr 1fr; margin-top: 8px; break-inside: avoid; }
+  .report-lead > div { min-height: 62px; padding: 8px 12px; }
+  .report-lead strong { font-size: 18px; }
+  .report-metrics { grid-template-columns: repeat(5, 1fr); margin-top: 6px; break-inside: avoid; }
+  .report-metrics > div { min-height: 54px; padding: 7px 10px; border-top: 0 !important; }
+  .report-metrics dd { font-size: 18px; }
+  .report-section, .report-buy-section { margin-top: 6px; break-inside: avoid; }
+  .section-heading, .report-buy-heading { padding: 7px 10px; }
+  .section-heading h2, .report-buy-heading h2 { font-size: 13px; }
+  .section-heading p, .report-buy-heading p { margin-top: 1px; font-size: 9px; }
+  .schedule-label { display: inline-flex; min-height: 18px; font-size: 9px; }
+  .report-table { min-width: 0; table-layout: fixed; }
+  .report-table th { height: 24px; padding: 0 6px; font-size: 9px; }
+  .report-table td { height: 31px; padding: 3px 6px; font-size: 9px; }
+  .strategy-cell { min-width: 0; }
+  .strategy-cell strong { font-size: 9px; }
+  .strategy-cell span, .buy-none { font-size: 8px; }
+  .signal-cell { min-width: 0; }
+  .filter-tag, .buy-chip { min-height: 17px; padding: 1px 4px; font-size: 8px; }
+  .buy-groups { grid-template-columns: repeat(6, 1fr); }
+  .buy-group { min-height: 84px; padding: 7px 9px; border-right: 1px solid var(--line) !important; border-bottom: 0 !important; }
+  .buy-group:last-child { border-right: 0 !important; }
+  .buy-group-head { margin-bottom: 4px; }
+  .buy-group-head strong { font-size: 10px; }
+  .buy-stock { gap: 2px 5px; padding: 3px 0; }
+  .buy-stock strong, .buy-stock .stock-price { font-size: 8px; }
+  .previous-close { font-size: 7px; }
+  .buy-stock .stock-name, .buy-group-head span, .group-empty { font-size: 7px; }
+  .change-tag { min-height: 14px; padding: 0 3px; font-size: 7px; }
+  .group-empty { margin-top: 12px; }
+  .sell-estimate-section { margin-top: 6px; break-before: page; }
+  .sell-estimate-metrics { grid-template-columns: repeat(5, 1fr); }
+  .sell-estimate-metrics > div { min-height: 42px; padding: 5px 8px; border-top: 0 !important; }
+  .sell-estimate-metrics dd { font-size: 14px; }
+  .sell-strategy-table, .sell-position-table { min-width: 0; table-layout: fixed; }
+  .sell-strategy-table th, .sell-position-table th { height: 22px; padding: 0 4px; font-size: 7px; }
+  .sell-strategy-table td, .sell-position-table td { height: 27px; padding: 2px 4px; font-size: 7px; }
+  .sell-position-heading { padding: 5px 8px; }
+  .estimated-sell-label { min-height: 14px; padding: 0 3px; font-size: 7px; }
+}
+
+@media (max-width: 640px) {
+  .report-topbar { align-items: flex-start; }
+  .report-actions { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); width: 100%; justify-content: stretch; }
+  .report-actions .workspace-nav { grid-column: 1 / -1; grid-row: 1; width: 100%; }
+  .report-actions .date-control { grid-column: 1 / -1; grid-row: 2; width: 100%; min-width: 0; }
+  .report-actions .date-control select { width: 100%; min-width: 0; }
+  .report-actions .status-badge { grid-column: 1; grid-row: 3; }
+  .report-actions .pdf-button { grid-column: 2; grid-row: 3; }
+  .report-actions .status-badge, .report-actions .pdf-button, .report-actions .page-link { width: 100%; justify-content: center; text-align: center; }
+  .report-actions .page-link { order: initial; }
+  .report-lead { grid-template-columns: 1fr; }
+  .report-lead > div { min-height: 116px; padding: 20px; }
+  .report-lead > div + div { border-left: 0; border-top: 1px solid var(--line); }
+  .report-lead strong { font-size: 23px; }
+  .report-metrics { grid-template-columns: repeat(2, 1fr); }
+  .sell-estimate-metrics { grid-template-columns: repeat(2, 1fr); }
+  .sell-estimate-metrics > div:nth-child(3) { border-right: 1px solid var(--line); }
+  .sell-estimate-metrics > div:nth-child(2n) { border-right: 0; }
+  .sell-estimate-metrics > div:nth-child(n+3) { border-top: 1px solid var(--line); }
+  .sell-estimate-metrics > div:last-child { grid-column: 1 / -1; }
+  .report-metrics > div { min-height: 90px; padding: 14px 16px; }
+  .report-metrics > div:nth-child(3) { border-right: 1px solid var(--line); }
+  .report-metrics > div:nth-child(2n) { border-right: 0; }
+  .report-metrics > div:nth-child(n+3) { border-top: 1px solid var(--line); }
+  .report-metrics > div:last-child { grid-column: 1 / -1; }
+  .buy-groups { grid-template-columns: 1fr; }
+  .buy-group { min-height: 118px; border-right: 0 !important; border-bottom: 1px solid var(--line) !important; }
+  .buy-group:last-child { border-bottom: 0 !important; }
+  .report-note { grid-template-columns: 1fr; gap: 5px; }
+}

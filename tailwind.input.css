@@ -1,0 +1,3 @@
+@tailwind base; /* 引入 Tailwind 基础样式层。 */
+@tailwind components; /* 引入 Tailwind 组件样式层。 */
+@tailwind utilities; /* 引入 Tailwind 工具类样式层。 */

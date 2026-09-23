@@ -1,0 +1,124 @@
+.weekly-shell { width: min(2200px, calc(100% - 48px)); max-width: none; }
+.weekly-controls { gap: 18px; }
+.weekly-summary-band { grid-template-columns: 290px minmax(0, 1fr); }
+.weekly-summary-band .summary-date strong { font-size: 19px; white-space: nowrap; }
+.weekly-metrics { grid-template-columns: repeat(7, minmax(102px, 1fr)); }
+.weekly-metrics div { padding: 17px 15px; }
+.weekly-metrics dd { font-size: 20px; }
+.weekly-overview-table { min-width: 1180px; }
+.weekly-detail-table { min-width: 1260px; }
+.data-badge { display: inline-flex; align-items: center; min-height: 24px; padding: 3px 7px; border-radius: 4px; font-size: 12px; font-weight: 650; white-space: nowrap; }
+.data-badge.estimated { background: var(--warning-soft); color: var(--warning); }
+.data-badge.actual { background: var(--accent-soft); color: var(--accent); }
+.change-value { color: var(--muted); font-weight: 650; font-variant-numeric: tabular-nums; }
+.change-value.up { color: var(--danger); }
+.change-value.down { color: var(--accent); }
+.detail-link { color: var(--accent); font-size: 12px; font-weight: 650; text-decoration: none; white-space: nowrap; }
+.detail-link:hover { text-decoration: underline; }
+.detail-link:focus-visible { outline: 3px solid rgba(8, 122, 91, .22); outline-offset: 2px; }
+.weekly-note { display: grid; grid-template-columns: auto 1fr; gap: 14px; margin-top: 14px; padding: 15px 18px; border: 1px solid var(--line); border-radius: var(--radius); background: var(--surface-soft); }
+.weekly-note strong { font-size: 12px; white-space: nowrap; }
+.weekly-note p { margin: 0; color: var(--muted); font-size: 12px; line-height: 1.7; }
+.weekly-report-shell { max-width: 1380px; }
+.weekly-report-metrics { grid-template-columns: repeat(6, 1fr); }
+.weekly-report-table { min-width: 1250px; }
+.weekly-daily-table { min-width: 1120px; }
+.cumulative-month-table { min-width: 1120px; }
+.sell-period-metrics { grid-template-columns: repeat(8, minmax(94px, 1fr)); }
+.sell-period-metrics div { padding: 16px 12px; }
+.sell-period-metrics dd { font-size: 18px; }
+.sell-period-overview-table { min-width: 0; }
+.sell-period-overview-table th, .sell-period-overview-table td { padding-left: 8px; padding-right: 8px; }
+.sell-period-overview-table th:first-child, .sell-period-overview-table td:first-child { padding-left: 14px; }
+.sell-period-overview-table .signal-cell { min-width: 120px; white-space: normal; overflow-wrap: anywhere; }
+.sell-period-overview-table tbody tr.comprehensive { background: var(--surface-soft); }
+.sell-period-overview-table tbody tr.comprehensive td { border-top-color: var(--line-strong); }
+.sell-period-detail-table { min-width: 1580px; }
+.daily-links { display: flex; align-items: center; gap: 10px; }
+.sell-trend-section { overflow: visible; }
+.sell-trend-legend { display: flex; align-items: center; gap: 18px; padding: 12px 20px 0; color: var(--muted); font-size: 11px; }
+.sell-trend-legend span { display: inline-flex; align-items: center; gap: 7px; }
+.sell-trend-legend span::before { width: 18px; height: 8px; border-radius: 2px; content: ""; }
+.sell-trend-legend .profit::before { background: linear-gradient(90deg, rgba(216,74,85,.76) 0 50%, rgba(22,134,106,.76) 50%); }
+.sell-trend-legend .rate::before { height: 2px; background: #3b6ea8; }
+.sell-trend-chart { position: relative; min-height: 340px; margin: 8px 12px 14px; overflow-x: auto; overflow-y: hidden; cursor: pointer; scrollbar-width: thin; scrollbar-color: var(--line-strong) transparent; }
+.sell-trend-svg { display: block; flex: none; height: 340px; overflow: visible; }
+.sell-trend-grid { stroke: #edf1ef; stroke-width: 1; vector-effect: non-scaling-stroke; }
+.sell-trend-zero { stroke: #c6cfcb; stroke-width: 1; vector-effect: non-scaling-stroke; }
+.sell-trend-axis { fill: var(--muted); font-size: 10px; font-variant-numeric: tabular-nums; }
+.sell-trend-axis.left { text-anchor: end; }
+.sell-trend-axis.right { text-anchor: start; }
+.sell-trend-date { fill: var(--muted); font-size: 10px; font-weight: 620; text-anchor: middle; }
+.sell-trend-bar { opacity: .82; }
+.sell-trend-bar.up { fill: #d84a55; }
+.sell-trend-bar.down { fill: #16866a; }
+.sell-trend-rate-line { fill: none; stroke: #3b6ea8; stroke-width: 2; vector-effect: non-scaling-stroke; }
+.sell-trend-point { fill: #3b6ea8; stroke: #fff; stroke-width: 1.5; vector-effect: non-scaling-stroke; }
+.sell-trend-point-hit { fill: transparent; }
+.sell-trend-value-label rect { fill: rgba(255,255,255,.94); stroke: var(--line); stroke-width: 1; vector-effect: non-scaling-stroke; }
+.sell-trend-value-label text { font-size: 9px; font-weight: 700; text-anchor: middle; font-variant-numeric: tabular-nums; }
+.sell-trend-value-label.up .amount { fill: var(--danger); }
+.sell-trend-value-label.down .amount { fill: var(--accent); }
+.sell-trend-value-label .rate { fill: #3b6ea8; }
+.sell-trend-svg a:focus .sell-trend-point, .sell-trend-svg a:hover .sell-trend-point { fill: #234f7e; stroke-width: 2.5; }
+.sell-trend-svg a:focus .sell-trend-bar, .sell-trend-svg a:hover .sell-trend-bar { opacity: 1; }
+.sell-trend-svg a:focus .sell-trend-value-label rect, .sell-trend-svg a:hover .sell-trend-value-label rect { stroke: var(--line-strong); fill: #fff; }
+.sell-trend-tooltip { position: absolute; z-index: 5; top: 0; left: 0; display: grid; gap: 3px; min-width: 170px; padding: 9px 11px; border: 1px solid var(--line-strong); border-radius: 4px; background: rgba(255,255,255,.96); box-shadow: 0 4px 14px rgba(23,32,29,.12); color: var(--ink); font-size: 11px; pointer-events: none; }
+.sell-trend-tooltip strong { font-size: 12px; }
+.sell-trend-tooltip span, .sell-trend-tooltip small { color: var(--muted); }
+.sell-trend-tooltip .up { color: var(--danger); font-weight: 680; }
+.sell-trend-tooltip .down { color: var(--accent); font-weight: 680; }
+.sell-trend-empty { display: grid; place-items: center; height: 100%; color: var(--muted); font-size: 12px; }
+
+@media (max-width: 1160px) {
+  .weekly-controls { align-items: flex-start; flex-wrap: wrap; justify-content: flex-end; }
+  .weekly-controls .page-nav { order: 3; }
+  .weekly-summary-band { grid-template-columns: 1fr; }
+  .weekly-summary-band .summary-date { border-right: 0; border-bottom: 1px solid var(--line); }
+  .weekly-metrics { grid-template-columns: repeat(4, 1fr); }
+  .weekly-metrics div:nth-child(4) { border-right: 0; }
+  .weekly-metrics div:nth-child(n+5) { border-top: 1px solid var(--line); }
+  .weekly-report-metrics { grid-template-columns: repeat(3, 1fr); }
+  .weekly-report-metrics > div:nth-child(3) { border-right: 0; }
+  .weekly-report-metrics > div:nth-child(n+4) { border-top: 1px solid var(--line); }
+  .sell-period-metrics { grid-template-columns: repeat(4, 1fr); }
+  .sell-period-metrics div:nth-child(4n) { border-right: 0; }
+  .sell-period-metrics div:nth-child(n+5) { border-top: 1px solid var(--line); }
+}
+
+@media (max-width: 640px) {
+  .weekly-controls { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); width: 100%; gap: 12px; }
+  .weekly-controls .page-nav { grid-column: 1 / -1; grid-row: 3; width: 100%; flex-wrap: wrap; overflow-x: visible; }
+  .weekly-controls .workspace-nav { grid-column: 1 / -1; grid-row: 1; width: 100%; }
+  .weekly-controls .date-control { grid-column: 1 / -1; grid-row: 2; width: 100%; }
+  .weekly-controls .date-control select { width: 100%; min-width: 0; }
+  .weekly-controls .sync-state { grid-column: 1 / -1; grid-row: 3; display: flex; align-items: center; gap: 8px; }
+  .weekly-metrics { grid-template-columns: repeat(2, 1fr); }
+  .weekly-metrics div:nth-child(4) { border-right: 0; }
+  .weekly-metrics div:nth-child(n+3) { border-top: 1px solid var(--line); }
+  .weekly-metrics div:nth-child(2n) { border-right: 0; }
+  .weekly-metrics div:last-child { grid-column: 1 / -1; }
+  .weekly-note { grid-template-columns: 1fr; gap: 5px; }
+  .weekly-report-metrics { grid-template-columns: repeat(2, 1fr); }
+  .weekly-report-metrics > div:nth-child(3) { border-right: 1px solid var(--line); }
+  .weekly-report-metrics > div:nth-child(2n) { border-right: 0; }
+  .weekly-report-metrics > div:nth-child(n+3) { border-top: 1px solid var(--line); }
+  .sell-period-metrics { grid-template-columns: repeat(2, 1fr); }
+  .sell-period-metrics div:nth-child(n+3) { border-top: 1px solid var(--line); }
+  .sell-period-metrics div:nth-child(2n) { border-right: 0; }
+  .sell-trend-legend { flex-wrap: wrap; gap: 8px 14px; padding: 10px 12px 0; }
+  .sell-trend-svg { height: 300px; }
+  .sell-trend-chart { min-height: 300px; margin: 6px 4px 10px; }
+}
+
+@page { size: A4 landscape; margin: 8mm; }
+@media print {
+  .weekly-report-shell { width: 100%; max-width: none; padding: 0; }
+  .weekly-report-metrics { grid-template-columns: repeat(6, 1fr); margin-top: 6px; }
+  .weekly-report-metrics > div { min-height: 54px; padding: 7px 9px; border-top: 0 !important; }
+  .weekly-report-table, .weekly-daily-table { min-width: 0; table-layout: fixed; }
+  .weekly-report-table th, .weekly-report-table td, .weekly-daily-table th, .weekly-daily-table td { height: auto; padding: 4px; font-size: 7px; }
+  .weekly-report-table .signal-cell { min-width: 0; }
+  .daily-links { gap: 4px; }
+  .detail-link { font-size: 7px; }
+}

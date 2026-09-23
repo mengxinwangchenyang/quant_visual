@@ -1,0 +1,79 @@
+<!doctype html>
+<html lang="zh-CN">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <meta name="color-scheme" content="light" />
+  <title>十三策略累计卖出</title>
+  <link rel="stylesheet" href="./daily_buys.css" />
+  <link rel="stylesheet" href="./daily_sells.css?v=20260812" />
+  <link rel="stylesheet" href="./weekly.css?v=20260812b" />
+</head>
+<body>
+  <main class="shell weekly-shell">
+    <header class="topbar">
+      <div><p class="context-label sell-context">虚拟 miniQMT</p><h1>累计卖出</h1></div>
+      <div class="topbar-controls weekly-controls">
+        <label class="page-switcher"><span>页面导航</span><select id="pageSwitcher" aria-label="切换页面"><optgroup label="每日"><option value="daily_buys.html">每日买入</option><option value="daily_sells.html">每日卖出</option><option value="daily_report.html">每日简报</option></optgroup><optgroup label="每周"><option value="weekly_buys.html">每周买入</option><option value="weekly_sells.html">每周卖出</option><option value="weekly_report.html">每周简报</option></optgroup><optgroup label="累计"><option value="cumulative_buys.html">累计买入</option><option value="cumulative_sells.html">累计卖出</option><option value="cumulative_report.html">累计简报</option></optgroup></select></label>
+        <label class="date-control"><span>累计截止日</span><select id="endSelect" aria-label="选择累计截止卖出日"></select></label>
+        <div class="sync-state"><span id="syncBadge" class="status-badge sell-badge">载入中</span><span id="generatedAt">正在读取每日快照</span></div>
+      </div>
+    </header>
+
+    <section id="loadingState" class="loading-state" aria-live="polite"><div class="skeleton skeleton-wide"></div><div class="skeleton-grid"><div class="skeleton"></div><div class="skeleton"></div><div class="skeleton"></div><div class="skeleton"></div></div></section>
+
+    <div id="dashboard" hidden>
+      <section class="summary-band weekly-summary-band" aria-label="累计卖出汇总">
+        <div class="summary-date"><span>累计区间</span><strong id="periodRange">-</strong><small id="coverageState">-</small></div>
+        <dl class="metrics sell-period-metrics">
+          <div><dt>交易日</dt><dd id="tradingDays">0</dd></div>
+          <div><dt>卖出记录</dt><dd id="recordCount">0</dd></div>
+          <div><dt>去重股票</dt><dd id="uniqueStockCount">0</dd></div>
+          <div><dt>真实委托</dt><dd id="actualOrderCount">0</dd></div>
+          <div><dt>真实成交</dt><dd id="actualFilledCount">0</dd></div>
+          <div><dt>预估卖出</dt><dd id="estimatedCount">0</dd></div>
+          <div><dt>手续费</dt><dd id="fees">¥0</dd></div>
+          <div><dt>盈亏（含费）</dt><dd id="pnl">¥0</dd></div>
+        </dl>
+      </section>
+
+      <nav id="strategyTabs" class="strategy-tabs" aria-label="策略筛选"></nav>
+
+      <section class="data-section sell-trend-section" aria-labelledby="sellTrendTitle">
+        <div class="section-heading"><div><h2 id="sellTrendTitle">每日利润趋势</h2><p>利润金额已扣除手续费，利润率按当日卖出记录的投入金额计算</p></div><span class="schedule-label">双轴</span></div>
+        <div class="sell-trend-legend"><span class="profit">利润金额（左轴，w）</span><span class="rate">利润率（右轴）</span></div>
+        <div id="sellTrendChart" class="sell-trend-chart" aria-label="累计每日卖出利润金额与利润率图"></div>
+      </section>
+
+      <section class="data-section" aria-labelledby="overviewTitle">
+        <div class="section-heading"><div><h2 id="overviewTitle">十三策略累计卖出概览</h2><p>累积收益率=含费盈亏÷初始资金（已含每日复利），平均收益率=含费盈亏÷累计买入成本；主板累积/平均收益率仅统计主板（非科创非创业）成交；胜率按含费盈亏计算，持有天数按交易日统计</p></div><span id="scheduleLabel" class="schedule-label"></span></div>
+        <div class="table-wrap"><table class="sell-period-overview-table">
+          <thead><tr><th>策略</th><th>策略简述</th><th class="number">记录</th><th class="number">真实委托</th><th class="number">真实成交</th><th class="number">预估卖出</th><th class="number">卖出金额</th><th class="number">手续费</th><th class="number">盈亏（含费）</th><th class="number">累积收益率</th><th class="number">平均收益率</th><th class="number">主板累积收益率</th><th class="number">主板平均收益率</th><th class="number">胜率</th><th class="number">主板胜率</th><th class="number">平均持有天数</th><th class="number">强制卖出占比</th><th class="number">止盈卖出占比</th><th class="number">科创板占比</th><th class="number">创业板占比</th><th class="number">主板占比</th></tr></thead>
+          <tbody id="strategyRows"></tbody>
+        </table></div>
+      </section>
+
+      <section class="data-section" aria-labelledby="detailTitle">
+        <div class="section-heading">
+          <div><h2 id="detailTitle">累计卖出详情</h2><p>按卖出日倒序展示；点击任一记录可直接查看买入点至卖出点的分钟行情</p></div>
+          <div class="candidate-heading-actions"><span id="recordCountLabel" class="schedule-label"></span><button id="chartToggleAll" class="candidate-toggle" type="button" aria-controls="sellChartList" aria-expanded="false">全部展开</button></div>
+        </div>
+        <div id="emptyState" class="empty-state" hidden><strong>累计区间没有卖出记录</strong><span>没有真实卖出或预估卖出数据</span></div>
+        <div id="sellChartList" class="candidate-list cumulative-inline-details"></div>
+      </section>
+
+      <aside class="weekly-note"><strong>统计口径</strong><p>盈亏与收益率只统计已形成卖出记录的数据并包含手续费；历史回算未提交真实委托。页面随每工作日15:30卖出快照自动更新。</p></aside>
+    </div>
+
+    <section id="errorState" class="error-state" hidden role="alert"><strong>累计卖出数据读取失败</strong><span id="errorMessage">请确认每日卖出快照已经生成。</span></section>
+  </main>
+  <script src="./vendor/lightweight-charts.js"></script>
+  <script src="./chart_day_separators.js"></script>
+  <script src="./sell_period_charts.js?v=20260812"></script>
+  <script src="./sell_pnl_trend.js?v=20260811g"></script>
+  <script src="./strategy_descriptions.js?v=20260817"></script>
+  <script src="./sell_statistics.js?v=20260812c"></script>
+  <script src="./page_navigation.js"></script>
+  <script src="./cumulative_sells.js?v=20260812c"></script>
+</body>
+</html>

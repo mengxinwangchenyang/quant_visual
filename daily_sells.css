@@ -1,0 +1,97 @@
+.sell-context { color: var(--warning); }
+.sell-badge { background: var(--warning-soft); color: var(--warning); }
+.data-section .section-heading > div { min-width: 0; }
+#feeModelLabel { line-height: 1.5; overflow-wrap: anywhere; }
+#feeModelLabel span { display: block; }
+.state-warning { margin-top: 18px; padding: 11px 14px; border: 1px solid #efd39f; border-radius: var(--radius); background: var(--warning-soft); color: #7f4b04; font-size: 12px; }
+.sell-summary-band { grid-template-columns: 230px minmax(0, 1fr); }
+.sell-metrics { grid-template-columns: repeat(7, minmax(100px, 1fr)); }
+.sell-metrics div { min-width: 0; padding: 16px 17px; }
+.sell-overview-table { min-width: 0; }
+.sell-overview-table th, .sell-overview-table td { padding-left: 8px; padding-right: 8px; }
+.sell-overview-table th:first-child, .sell-overview-table td:first-child { padding-left: 14px; }
+.sell-overview-table .signal-cell { min-width: 120px; white-space: normal; overflow-wrap: anywhere; }
+.sell-overview-table .strategy-cell { min-width: 60px; }
+.sell-overview-table tbody tr.comprehensive { background: var(--surface-soft); }
+.sell-overview-table tbody tr.comprehensive td { border-top-color: var(--line-strong); }
+.board-tag { display: inline-flex; align-items: center; justify-self: start; min-height: 17px; margin-left: 6px; padding: 0 6px; border-radius: 4px; font-size: 10px; font-weight: 680; line-height: 1.6; white-space: nowrap; }
+.board-tag.star { background: #e9f1fb; color: #2f5c9c; }
+.board-tag.gem { background: #fdefe1; color: #b05812; }
+.candidate-stock .board-tag, .chart-meta .board-tag { margin-left: 0; }
+.sell-result { display: grid; justify-items: start; gap: 4px; }
+.sell-type { display: inline-flex; align-items: center; min-height: 23px; padding: 2px 7px; border-radius: 4px; font-size: 11px; font-weight: 680; }
+.sell-type.actual { background: var(--accent-soft); color: var(--accent); }
+.sell-type.estimated { background: var(--warning-soft); color: var(--warning); }
+.pnl-positive { color: var(--danger); font-weight: 680; }
+.pnl-negative { color: var(--accent); font-weight: 680; }
+.pnl-flat { color: var(--muted); }
+.pnl-stack { display: inline-grid; justify-items: end; gap: 2px; white-space: nowrap; }
+.pnl-stack small { color: var(--muted); font-size: 10px; font-weight: 500; }
+.sell-metrics .pnl-stack { justify-items: start; }
+.sell-metrics .pnl-stack small { white-space: normal; }
+.sell-record summary { grid-template-columns: 28px 72px 80px minmax(170px, 1fr) minmax(220px, 1.25fr) 150px 130px 118px; }
+.sell-status { display: grid; justify-items: start; gap: 4px; }
+.sell-quote { display: grid; justify-items: end; gap: 2px; font-variant-numeric: tabular-nums; }
+.sell-quote strong { font-size: 13px; }
+.sell-quote small { color: var(--muted); font-size: 10px; }
+.sell-pnl { text-align: right; font-size: 13px; font-variant-numeric: tabular-nums; }
+.buy-day-link { display: inline-flex; align-items: center; justify-content: center; min-height: 34px; padding: 0 9px; border: 1px solid #9bb8d5; border-radius: 4px; background: #f4f8fc; color: #285f96; font-size: 11px; font-weight: 680; line-height: 1.2; text-align: center; text-decoration: none; white-space: nowrap; }
+.buy-day-link:hover { border-color: #3b6ea8; background: #e8f1fa; color: #194d7d; }
+.buy-day-link:focus-visible { outline: 2px solid #3b6ea8; outline-offset: 2px; }
+.chart-expand-label { display: inline-flex; align-items: center; justify-content: center; min-height: 34px; padding: 0 9px; border: 1px solid #9bc8ba; border-radius: 4px; background: var(--accent-soft); color: var(--accent); font-size: 11px; font-weight: 680; white-space: nowrap; }
+.period-chart-record[open] .chart-expand-label { border-color: var(--line-strong); background: var(--surface-soft); color: var(--muted); }
+.sell-chart-legend { display: flex; flex-wrap: wrap; gap: 12px; margin-top: 7px; color: var(--muted); font-size: 10px; }
+.legend-line { display: inline-flex; align-items: center; gap: 5px; }
+.legend-line::before { width: 16px; height: 2px; background: var(--legend-color); content: ""; }
+.fee-breakdown { margin-top: 10px; padding-top: 10px; border-top: 1px solid var(--line); }
+.fee-breakdown-heading, .fee-total { display: flex; align-items: center; justify-content: space-between; gap: 12px; }
+.fee-breakdown-heading strong { font-size: 12px; }
+.fee-breakdown-heading span { color: var(--muted); font-size: 10px; }
+.fee-breakdown dl { display: grid; grid-template-columns: repeat(5, minmax(0, 1fr)); margin: 8px 0; }
+.fee-breakdown dl div { min-width: 0; padding: 7px 10px; border-left: 1px solid var(--line); }
+.fee-breakdown dl div:first-child { border-left: 0; padding-left: 0; }
+.fee-breakdown dt { color: var(--muted); font-size: 10px; }
+.fee-breakdown dd { margin: 2px 0 0; font-size: 12px; font-weight: 650; font-variant-numeric: tabular-nums; }
+.fee-total { padding-top: 7px; border-top: 1px dashed var(--line); font-size: 12px; }
+.fee-total strong { color: var(--warning); font-variant-numeric: tabular-nums; }
+.sell-statistics-table { min-width: 760px; }
+.sell-statistics-table th:first-child, .sell-statistics-table td:first-child { position: sticky; left: 0; z-index: 1; width: 180px; background: var(--surface); box-shadow: 1px 0 0 var(--line); }
+.sell-statistics-table th:first-child { z-index: 2; background: var(--surface-soft); }
+.sell-statistics-table td:first-child strong { display: block; }
+.sell-statistics-table td:first-child span { color: var(--muted); font-size: 10px; }
+.sell-statistics-table tbody tr.comprehensive { background: var(--surface-soft); }
+.sell-statistics-table tbody tr.comprehensive td:first-child { background: var(--surface-soft); }
+.sell-statistics-table tbody tr.comprehensive td { border-top-color: var(--line-strong); }
+.sell-statistics-table tbody tr.active-stat td:first-child { box-shadow: inset 3px 0 0 var(--accent); }
+
+@media (max-width: 980px) {
+  .sell-summary-band { grid-template-columns: 1fr; }
+  .sell-metrics { grid-template-columns: repeat(4, 1fr); }
+  .sell-metrics div:nth-child(3) { border-right: 1px solid var(--line); }
+  .sell-metrics div:nth-child(4) { border-right: 0; }
+  .sell-metrics div:nth-child(n+5) { border-top: 1px solid var(--line); }
+}
+
+@media (max-width: 640px) {
+  .data-section .section-heading { flex-wrap: wrap; }
+  .data-section .section-heading > div { flex: 1 1 100%; width: 100%; }
+  .data-section .section-heading .schedule-label { flex: 0 0 auto; }
+  .topbar-controls { flex-wrap: wrap; }
+  .topbar-controls .sync-state { min-width: 0; flex: 1 1 150px; white-space: normal; }
+  .sell-metrics { grid-template-columns: repeat(2, minmax(0, 1fr)); }
+  .sell-metrics dd { font-size: 18px; }
+  #sellAmount { font-size: 16px; }
+  .sell-metrics div:nth-child(3) { border-right: 1px solid var(--line); }
+  .sell-metrics div:nth-child(4) { border-right: 0; }
+  .sell-metrics div:nth-child(n+3) { border-top: 1px solid var(--line); }
+  .sell-metrics div:last-child { grid-column: 1 / -1; }
+  .sell-record summary { grid-template-columns: 24px 64px minmax(130px, 1fr); }
+  .sell-record .candidate-strategy { grid-column: 2; }
+  .sell-record .candidate-stock { grid-column: 3; }
+  .sell-record .sell-status { grid-column: 3; }
+  .sell-record .sell-quote { grid-column: 2; justify-items: start; }
+  .sell-record .sell-pnl { grid-column: 3; text-align: left; }
+  .sell-record .buy-day-link, .sell-record .chart-expand-label { grid-column: 2 / -1; justify-self: start; }
+  .fee-breakdown dl { grid-template-columns: repeat(2, minmax(0, 1fr)); }
+  .fee-breakdown dl div { border-left: 0; border-top: 1px solid var(--line); padding-left: 0; }
+}

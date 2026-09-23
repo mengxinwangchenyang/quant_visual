@@ -1,0 +1,68 @@
+<!doctype html>
+<html lang="zh-CN">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <meta name="color-scheme" content="light" />
+  <title>十三策略每周买入</title>
+  <link rel="stylesheet" href="./daily_buys.css" />
+  <link rel="stylesheet" href="./weekly.css" />
+</head>
+<body>
+  <main class="shell weekly-shell">
+    <header class="topbar">
+      <div><p class="context-label">虚拟 miniQMT</p><h1>每周买入</h1></div>
+      <div class="topbar-controls weekly-controls">
+        <label class="page-switcher"><span>页面导航</span><select id="pageSwitcher" aria-label="切换页面"><optgroup label="每日"><option value="daily_buys.html">每日买入</option><option value="daily_sells.html">每日卖出</option><option value="daily_report.html">每日简报</option></optgroup><optgroup label="每周"><option value="weekly_buys.html">每周买入</option><option value="weekly_sells.html">每周卖出</option><option value="weekly_report.html">每周简报</option></optgroup><optgroup label="累计"><option value="cumulative_buys.html">累计买入</option><option value="cumulative_sells.html">累计卖出</option><option value="cumulative_report.html">累计简报</option></optgroup></select></label>
+        <label class="date-control"><span>周五结束日</span><select id="weekSelect" aria-label="选择统计周"></select></label>
+        <div class="sync-state"><span id="syncBadge" class="status-badge">载入中</span><span id="generatedAt">正在读取周快照</span></div>
+      </div>
+    </header>
+
+    <section id="loadingState" class="loading-state" aria-live="polite">
+      <div class="skeleton skeleton-wide"></div><div class="skeleton-grid"><div class="skeleton"></div><div class="skeleton"></div><div class="skeleton"></div><div class="skeleton"></div></div>
+    </section>
+
+    <div id="dashboard" hidden>
+      <section class="summary-band weekly-summary-band" aria-label="当周买入汇总">
+        <div class="summary-date"><span>统计周期</span><strong id="weekRange">-</strong><small id="coverageState">-</small></div>
+        <dl class="metrics weekly-metrics">
+          <div><dt>交易日</dt><dd id="tradingDays">0</dd></div>
+          <div><dt>候选</dt><dd id="candidateCount">0</dd></div>
+          <div><dt>通过风控</dt><dd id="acceptedCount">0</dd></div>
+          <div><dt>历史预估买入</dt><dd id="estimatedCount">0</dd></div>
+          <div><dt>真实委托</dt><dd id="submittedCount">0</dd></div>
+          <div><dt>真实成交</dt><dd id="filledCount">0</dd></div>
+          <div><dt>买入金额</dt><dd id="buyAmount">¥0</dd></div>
+        </dl>
+      </section>
+
+      <nav id="strategyTabs" class="strategy-tabs" aria-label="策略筛选"></nav>
+
+      <section class="data-section" aria-labelledby="overviewTitle">
+        <div class="section-heading"><div><h2 id="overviewTitle">十三策略周度概览</h2><p>按交易日累加，历史预估与真实委托分别统计</p></div><span id="scheduleLabel" class="schedule-label"></span></div>
+        <div class="table-wrap"><table class="weekly-overview-table">
+          <thead><tr><th>策略</th><th>策略简述</th><th class="number">候选</th><th class="number">通过</th><th class="number">预估买入</th><th class="number">真实委托</th><th class="number">真实成交</th><th class="number">买入金额</th></tr></thead>
+          <tbody id="strategyRows"></tbody>
+        </table></div>
+      </section>
+
+      <section class="data-section" aria-labelledby="detailTitle">
+        <div class="section-heading"><div><h2 id="detailTitle">当周买入详情</h2><p>仅列实际买入和历史预估买入；可跳转查看当日分钟行情</p></div><span id="buyCountLabel" class="schedule-label"></span></div>
+        <div id="emptyState" class="empty-state" hidden><strong>当周没有买入记录</strong><span>候选股票均未通过买入条件或没有提交委托</span></div>
+        <div id="detailTable" class="table-wrap"><table class="weekly-detail-table">
+          <thead><tr><th>买入日</th><th>策略</th><th>数据性质</th><th>股票</th><th class="number">买入价</th><th class="number">买入点相对昨收涨幅</th><th class="number">股数</th><th class="number">金额</th><th>结果</th><th>当日详情</th></tr></thead>
+          <tbody id="buyRows"></tbody>
+        </table></div>
+      </section>
+
+      <aside class="weekly-note"><strong>统计口径</strong><p>历史日期为行情回算的预估买入，未向 miniQMT 提交委托；正式运行日起展示真实委托与成交。周快照只在周五日终生成并永久保留。</p></aside>
+    </div>
+
+    <section id="errorState" class="error-state" hidden role="alert"><strong>周快照读取失败</strong><span id="errorMessage">请确认每周快照已经生成。</span></section>
+  </main>
+  <script src="./strategy_descriptions.js?v=20260817"></script>
+  <script src="./page_navigation.js"></script>
+  <script src="./weekly_buys.js"></script>
+</body>
+</html>

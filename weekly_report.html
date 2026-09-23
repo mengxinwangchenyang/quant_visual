@@ -1,0 +1,66 @@
+<!doctype html>
+<html lang="zh-CN">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <meta name="color-scheme" content="light" />
+  <title>十三策略每周简报</title>
+  <link rel="stylesheet" href="./daily_buys.css" />
+  <link rel="stylesheet" href="./buy_report.css" />
+  <link rel="stylesheet" href="./weekly.css" />
+</head>
+<body>
+  <main class="shell report-shell weekly-report-shell">
+    <header class="topbar report-topbar">
+      <div><p class="context-label">虚拟 miniQMT · 每周简报</p><h1>每周策略简报</h1></div>
+      <div class="report-actions">
+        <label class="page-switcher"><span>页面导航</span><select id="pageSwitcher" aria-label="切换页面"><optgroup label="每日"><option value="daily_buys.html">每日买入</option><option value="daily_sells.html">每日卖出</option><option value="daily_report.html">每日简报</option></optgroup><optgroup label="每周"><option value="weekly_buys.html">每周买入</option><option value="weekly_sells.html">每周卖出</option><option value="weekly_report.html">每周简报</option></optgroup><optgroup label="累计"><option value="cumulative_buys.html">累计买入</option><option value="cumulative_sells.html">累计卖出</option><option value="cumulative_report.html">累计简报</option></optgroup></select></label>
+        <label class="date-control"><span>周五结束日</span><select id="weekSelect" aria-label="选择统计周"></select></label>
+        <span id="reportBadge" class="status-badge">载入中</span>
+        <button id="printButton" class="pdf-button" type="button">导出PDF</button>
+      </div>
+    </header>
+
+    <section id="loadingState" class="loading-state" aria-live="polite"><div class="skeleton skeleton-wide"></div><div class="skeleton-grid"><div class="skeleton"></div><div class="skeleton"></div><div class="skeleton"></div><div class="skeleton"></div></div></section>
+
+    <div id="report" hidden>
+      <section class="report-lead">
+        <div><span class="report-kicker">统计周期</span><strong id="weekRange">-</strong><p id="coverageState">-</p></div>
+        <div class="report-verdict"><span>当周结果</span><strong id="reportVerdict">-</strong><p id="reportVerdictNote">-</p></div>
+      </section>
+
+      <dl class="report-metrics weekly-report-metrics" aria-label="当周汇总">
+        <div><dt>交易日</dt><dd id="tradingDays">0</dd><small>有快照日期</small></div>
+        <div><dt>买入记录</dt><dd id="buyCount">0</dd><small id="buyTypeNote">预估0 / 真实0</small></div>
+        <div><dt>买入金额</dt><dd id="buyAmount">¥0</dd><small>预估与成交合计</small></div>
+        <div><dt>当周卖出</dt><dd id="sellCount">0</dd><small>按卖出日期统计</small></div>
+        <div><dt>手续费</dt><dd id="fees">¥0</dd><small>买卖费用合计</small></div>
+        <div><dt>盈亏（含费）</dt><dd id="pnl">¥0</dd><small id="returnRate">收益率 0.00%</small></div>
+      </dl>
+
+      <section class="data-section report-section" aria-labelledby="strategyTitle">
+        <div class="section-heading"><div><h2 id="strategyTitle">十三策略周度汇总</h2><p>当周买入与当周卖出按策略分别汇总</p></div><span id="snapshotTime" class="schedule-label"></span></div>
+        <div class="table-wrap"><table class="weekly-report-table">
+          <thead><tr><th>策略</th><th>策略简述</th><th class="number">候选</th><th class="number">通过</th><th class="number">买入记录</th><th class="number">买入金额</th><th class="number">卖出记录</th><th class="number">手续费</th><th class="number">盈亏（含费）</th></tr></thead>
+          <tbody id="strategyRows"></tbody>
+        </table></div>
+      </section>
+
+      <section class="data-section report-section" aria-labelledby="dailyTitle">
+        <div class="section-heading"><div><h2 id="dailyTitle">逐日执行概览</h2><p>点击日期进入对应每日页面查看逐股详情和分钟行情</p></div></div>
+        <div class="table-wrap"><table class="weekly-daily-table">
+          <thead><tr><th>日期</th><th class="number">候选</th><th class="number">通过</th><th class="number">预估买入</th><th class="number">真实委托</th><th class="number">真实成交</th><th class="number">卖出记录</th><th class="number">手续费</th><th class="number">盈亏（含费）</th><th>详情</th></tr></thead>
+          <tbody id="dailyRows"></tbody>
+        </table></div>
+      </section>
+
+      <aside class="report-note"><strong>口径说明</strong><p>买入按当周买入日统计；卖出、手续费和盈亏按当周卖出日统计，因此可能对应更早买入的持仓。历史回算均为预估，未向 miniQMT 提交委托；正式运行数据展示真实委托和成交。</p></aside>
+    </div>
+
+    <section id="errorState" class="error-state" hidden role="alert"><strong>周简报读取失败</strong><span id="errorMessage">未找到周快照数据。</span></section>
+  </main>
+  <script src="./strategy_descriptions.js?v=20260817"></script>
+  <script src="./page_navigation.js"></script>
+  <script src="./weekly_report.js"></script>
+</body>
+</html>

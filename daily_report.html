@@ -1,0 +1,115 @@
+<!doctype html>
+<html lang="zh-CN">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <meta name="color-scheme" content="light" />
+  <title>十三策略每日简报</title>
+  <link rel="stylesheet" href="./daily_buys.css" />
+  <link rel="stylesheet" href="./buy_report.css" />
+</head>
+<body>
+  <main class="shell report-shell">
+    <header class="topbar report-topbar">
+      <div>
+        <p id="reportContext" class="context-label">虚拟 miniQMT · 每日简报</p>
+        <h1 id="reportTitle">每日策略简报</h1>
+      </div>
+      <div class="report-actions">
+        <label class="page-switcher"><span>页面导航</span><select id="pageSwitcher" aria-label="切换页面"><optgroup label="每日"><option value="daily_buys.html">每日买入</option><option value="daily_sells.html">每日卖出</option><option value="daily_report.html">每日简报</option></optgroup><optgroup label="每周"><option value="weekly_buys.html">每周买入</option><option value="weekly_sells.html">每周卖出</option><option value="weekly_report.html">每周简报</option></optgroup><optgroup label="累计"><option value="cumulative_buys.html">累计买入</option><option value="cumulative_sells.html">累计卖出</option><option value="cumulative_report.html">累计简报</option></optgroup></select></label>
+        <label class="date-control">
+          <span>交易日</span>
+          <select id="dateSelect" aria-label="选择简报交易日"></select>
+        </label>
+        <span id="reportBadge" class="status-badge">载入中</span>
+        <button id="printButton" class="pdf-button" type="button">导出PDF</button>
+      </div>
+    </header>
+
+    <section id="loadingState" class="loading-state" aria-live="polite">
+      <div class="skeleton skeleton-wide"></div>
+      <div class="skeleton-grid"><div class="skeleton"></div><div class="skeleton"></div><div class="skeleton"></div><div class="skeleton"></div></div>
+    </section>
+
+    <div id="report" hidden>
+      <section class="report-lead">
+        <div>
+          <span class="report-kicker">执行日期</span>
+          <strong id="reportDate">-</strong>
+          <p id="sourceLabel">读取每日快照</p>
+        </div>
+        <div class="report-verdict">
+          <span>结论</span>
+          <strong id="reportVerdict">-</strong>
+          <p id="reportVerdictNote">-</p>
+        </div>
+      </section>
+
+      <dl class="report-metrics" aria-label="买入汇总">
+        <div><dt>候选记录</dt><dd id="candidateCount">0</dd><small id="uniqueCandidateCount">去重0只</small></div>
+        <div><dt>通过风控</dt><dd id="acceptedCount">0</dd><small>策略口径</small></div>
+        <div><dt id="buyMetricLabel">预计买入</dt><dd id="buyCount">0</dd><small id="uniqueBuyCount">去重0只</small></div>
+        <div><dt>涨停附近排除</dt><dd id="nearLimitCount">0</dd><small>不提交委托</small></div>
+        <div><dt>实际委托</dt><dd id="submittedCount">0</dd><small id="submittedNote">当日记录</small></div>
+      </dl>
+
+      <section class="data-section report-section" aria-labelledby="strategyTitle">
+        <div class="section-heading">
+          <div><h2 id="strategyTitle">十三策略汇总</h2><p>候选、风控、资金和退出规则</p></div>
+          <span id="snapshotTime" class="schedule-label">快照载入中</span>
+        </div>
+        <div class="table-wrap">
+          <table class="report-table">
+            <thead><tr><th>策略</th><th>策略简述</th><th>资金规则</th><th class="number">候选</th><th class="number">通过</th><th id="strategyBuyLabel">买入结果</th><th>主要排除原因</th></tr></thead>
+            <tbody id="strategyRows"></tbody>
+          </table>
+        </div>
+      </section>
+
+      <section class="report-buy-section" aria-labelledby="buyTitle">
+        <div class="report-buy-heading">
+          <div><h2 id="buyTitle">买入股票</h2><p id="buyDescription">同一股票被不同策略选中时分别计入</p></div>
+          <span id="buySummary" class="status-badge">0条</span>
+        </div>
+        <div id="buyGroups" class="buy-groups"></div>
+      </section>
+
+      <section class="data-section sell-estimate-section" aria-labelledby="sellTitle">
+        <div class="section-heading">
+          <div><h2 id="sellTitle">关联卖出结果</h2><p>按本简报买入日关联后续真实或预估卖出，盈亏包含手续费</p></div>
+          <span id="sellBadge" class="status-badge sell-estimate-badge">0条</span>
+        </div>
+        <dl class="sell-estimate-metrics">
+          <div><dt>关联卖出记录</dt><dd id="sellRecordCount">0</dd></div>
+          <div><dt>真实成交</dt><dd id="actualSoldCount">0</dd></div>
+          <div><dt>预估卖出</dt><dd id="estimatedSoldCount">0</dd></div>
+          <div><dt>卖出金额</dt><dd id="sellAmount">¥0</dd></div>
+          <div><dt>盈亏（含费）</dt><dd id="sellPnl">¥0</dd><small id="sellFeeNote">手续费 ¥0</small></div>
+        </dl>
+        <div class="table-wrap">
+          <table class="sell-strategy-table">
+            <thead><tr><th>策略</th><th>策略简述</th><th class="number">记录</th><th class="number">真实成交</th><th class="number">预估卖出</th><th class="number">手续费</th><th class="number">盈亏（含费）</th></tr></thead>
+            <tbody id="sellStrategyRows"></tbody>
+          </table>
+        </div>
+        <div class="sell-position-heading"><strong>逐股卖出明细</strong><span id="sellUpdatedAt">等待卖出数据</span></div>
+        <div class="table-wrap">
+          <table class="sell-position-table">
+            <thead><tr><th>策略</th><th>股票</th><th class="number">买入价</th><th class="number">+9%目标价</th><th class="number">卖出价</th><th>卖出日期</th><th>卖出原因</th><th class="number">盈亏（含费）</th></tr></thead>
+            <tbody id="sellPositionRows"><tr><td colspan="8" class="sell-loading">正在读取卖出快照</td></tr></tbody>
+          </table>
+        </div>
+      </section>
+
+      <aside class="report-note"><strong>口径说明</strong><p id="reportNote">买入和卖出数据来自每日自动快照。</p></aside>
+    </div>
+
+    <section id="errorState" class="error-state" hidden role="alert">
+      <strong>简报读取失败</strong><span id="errorMessage">未找到日报数据。</span>
+    </section>
+  </main>
+  <script src="./strategy_descriptions.js?v=20260817"></script>
+  <script src="./page_navigation.js"></script>
+  <script src="./daily_report.js?v=20260811b"></script>
+</body>
+</html>
