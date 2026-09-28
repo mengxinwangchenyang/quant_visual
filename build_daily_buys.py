@@ -11,18 +11,15 @@ from typing import Any, Dict, Iterable, List, Optional, Sequence, Tuple
 import pandas as pd
 
 
-PROJECT_ROOT = Path(__file__).resolve().parents[1]
-if str(PROJECT_ROOT) not in sys.path:
-    sys.path.insert(0, str(PROJECT_ROOT))
+from project_paths import PROJECT_ROOT, VISUAL_ROOT
 
-from visual import build_qmt_fills as qf
-from visual import xtdata_offline_shim
+import build_qmt_fills as qf
+import xtdata_offline_shim
 
 import config
 import util
 
 
-VISUAL_ROOT = Path(__file__).resolve().parent
 OUTPUT_PATH = VISUAL_ROOT / "daily_buys_snapshot.json"
 CHART_DIR = VISUAL_ROOT / "daily_buy_charts"
 CASH_LEDGER_PATH = PROJECT_ROOT / "cash_ledger" / "strategy_cash_ledger.json"

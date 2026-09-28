@@ -5,12 +5,12 @@
 请求文件变化时盘中重导(如 14:55 大脑随单刷新请求后)。本进程只做轻量调度:
   循环(每 POLL_SECONDS 秒):
     两个数据文件的 mtime 都没变 -> 什么都不做(零成本);
-    任一变了 -> 子进程跑 visual/refresh.py(只读重建快照+定点补图)。
+    任一变了 -> 子进程跑 refresh.py(只读重建快照+定点补图)。
 子进程每次全新启动,分钟/日线的模块级缓存不会跨周期残留——这是用子进程而非
 进程内重建的原因。本脚本到 EXIT_AT 自动退出;收盘后的全量刷新在 daily_refresh.bat
-(15:35 归档/卖出账本/资金账本)之后另跑一次 visual/refresh.py。
+(15:35 归档/卖出账本/资金账本)之后另跑一次 refresh.py。
 
-只读行情/成交 + 写快照文件,绝不下单。用法: python visual/live_refresh.py
+只读行情/成交 + 写快照文件,绝不下单。用法: python live_refresh.py(在 quant_visual 目录下)
 """
 
 import os
@@ -19,13 +19,11 @@ import sys
 import time
 from pathlib import Path
 
-PROJECT_ROOT = Path(__file__).resolve().parents[1]
-if str(PROJECT_ROOT) not in sys.path:
-    sys.path.insert(0, str(PROJECT_ROOT))
+from project_paths import PROJECT_ROOT, VISUAL_ROOT
 
 FILLS = PROJECT_ROOT / "qmt_local" / "qmt_fills.json"
 MINUTE = PROJECT_ROOT / "qmt_local" / "qmt_minute_data.json"
-REFRESH_ONCE = PROJECT_ROOT / "visual" / "refresh.py"
+REFRESH_ONCE = VISUAL_ROOT / "refresh.py"
 POLL_SECONDS = 60
 EXIT_AT = "15:10"   # 收摊后退出;收盘后的全量刷新另行调度。
 

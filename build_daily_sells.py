@@ -8,17 +8,14 @@ from pathlib import Path
 from typing import Any, Dict, Iterable, List, Optional
 
 
-PROJECT_ROOT = Path(__file__).resolve().parents[1]
-if str(PROJECT_ROOT) not in sys.path:
-    sys.path.insert(0, str(PROJECT_ROOT))
+from project_paths import PROJECT_ROOT, VISUAL_ROOT
 
 import config
 import util
-from visual import build_daily_buys
-from visual import build_qmt_fills as qf
+import build_daily_buys
+import build_qmt_fills as qf
 
 
-VISUAL_ROOT = Path(__file__).resolve().parent
 OUTPUT_PATH = VISUAL_ROOT / "daily_sells_snapshot.json"
 CHART_DIR = VISUAL_ROOT / "daily_sell_charts"
 STRATEGY_RULES = {

@@ -1,5 +1,5 @@
 # -*- coding: utf-8 -*-
-"""一次性重建全部可视化快照(只读 quant_fresh 交易数据,只写 visual/ 下的文件)。
+"""一次性重建全部可视化快照(只读 quant_fresh 交易数据,只写本仓库下的文件)。
 
   1) 日买入快照 + 最新日买入分钟图
   2) 日卖出快照 + 最新日卖出分钟图
@@ -8,20 +8,17 @@
 
 数据来源:auto_buy/qmt_orders.json、qmt_buy_candidates.json、daily_refresh/qmt_deal_archive.json、
 cash_ledger/strategy_cash_ledger.json、qmt_local/*.json、virtual_qmt_data/predict_sync_*。
-绝不写这些文件,也不下单。用法: python visual/refresh.py
+绝不写这些文件,也不下单。用法: python refresh.py(在 quant_visual 目录下)
 """
 
 import sys
 import traceback
-from pathlib import Path
 
-PROJECT_ROOT = Path(__file__).resolve().parents[1]
-if str(PROJECT_ROOT) not in sys.path:
-    sys.path.insert(0, str(PROJECT_ROOT))
+import project_paths  # noqa: F401  挂载 quant_fresh 到 sys.path
 
 
 def rebuild_pages():
-    from visual import build_daily_buys, build_daily_sells, build_weekly_snapshot
+    import build_daily_buys, build_daily_sells, build_weekly_snapshot
     print("rebuild daily_buys ...", flush=True)
     build_daily_buys.main()
     print("rebuild daily_sells ...", flush=True)
@@ -38,7 +35,7 @@ def rebuild_pages():
 def main():
     try:
         rebuild_pages()
-        from visual import build_daily_buys, build_daily_sells, rebuild_missing_charts
+        import build_daily_buys, build_daily_sells, rebuild_missing_charts
         rebuild_missing_charts.rebuild_buys(build_daily_buys)
         rebuild_missing_charts.rebuild_sells(build_daily_buys, build_daily_sells)
     except Exception:

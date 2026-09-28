@@ -17,7 +17,8 @@ from pathlib import Path
 
 import pandas as pd
 
-PROJECT_ROOT = Path(__file__).resolve().parents[1]
+from project_paths import PROJECT_ROOT
+
 HISTORY_DATA = PROJECT_ROOT / "qmt_local" / "qmt_history_data.json"
 MINUTE_DATA = PROJECT_ROOT / "qmt_local" / "qmt_minute_data.json"
 CSI1000_FILE = PROJECT_ROOT / "qmt_local" / "qmt_csi1000.json"

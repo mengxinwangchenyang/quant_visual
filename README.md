@@ -2,19 +2,21 @@
 
 [quant_fresh](https://github.com/mengxinwangchenyang/quant_fresh) 虚拟盘的可视化：每日/每周/累计的买入、卖出与报告页面，附个股分钟 K 线。
 
-**只读**：只读取 quant_fresh 的交易数据，只写 `visual/` 下的快照与图表，绝不下单、绝不改交易文件。
+**只读**：只读取 quant_fresh 的交易数据，只写本仓库下的快照与图表，绝不下单、绝不改交易文件。
 
 ## 目录位置
 
-本仓库必须克隆到 quant_fresh 根目录下的 `visual/`：
+本仓库与 quant_fresh 克隆到同一个父目录下：
 
 ```
-quant_fresh/
-├── config.py, util.py, auto_buy/predict_client.py   ← 被 visual 复用
-└── visual/                                         ← 本仓库
+quant/
+├── quant_fresh/     ← 交易仓库（config.py、util.py、auto_buy/predict_client.py 被本仓库复用）
+└── quant_visual/    ← 本仓库
 ```
 
-脚本以 `quant_fresh` 为 `PROJECT_ROOT`，直接复用根目录的 `config`（`START_DATE`、`STRATEGY_CONFIGS`）、`util`（交易日历）和 `predict_client`（历史候选回放）。
+`project_paths.py` 默认把同级的 `../quant_fresh` 作为 `PROJECT_ROOT` 挂到 `sys.path`，复用其 `config`（`START_DATE`、`STRATEGY_CONFIGS`）、`util`（交易日历）和 `predict_client`（历史候选回放）。放在别处时设置环境变量 `QUANT_FRESH_ROOT`。
+
+quant_fresh 的 `auto_buy/export_history_request.py`、`export_minute_request.py` 反过来读取本仓库的 `daily_buys_snapshot.json` 与分钟图目录，以决定要导出哪些股票的行情，因此目录名须为 `quant_visual`。
 
 ## 数据来源（只读）
 
@@ -32,8 +34,8 @@ quant_fresh/
 
 | 命令 | 作用 |
 |---|---|
-| `refresh.bat`（或 `python visual/refresh.py`） | 一次性重建全部快照与图表，日志 `visual/refresh.log` |
-| `live_refresh.bat` | 盘中每 60 秒检查成交/分钟数据，变化即重建，15:10 自动退出，日志 `visual/live_refresh.log` |
+| `refresh.bat`（或 `python refresh.py`） | 一次性重建全部快照与图表，日志 `refresh.log` |
+| `live_refresh.bat` | 盘中每 60 秒检查成交/分钟数据，变化即重建，15:10 自动退出，日志 `live_refresh.log` |
 | `serve.bat` | 启动网页 <http://127.0.0.1:5510/daily_buys.html> |
 
 默认解释器 `C:\Python\Python38\python.exe`，可用环境变量 `PYTHON_EXE` 覆盖。
@@ -42,6 +44,7 @@ quant_fresh/
 
 | 文件 | 作用 |
 |---|---|
+| `project_paths.py` | 定位 quant_fresh 并挂到 `sys.path` |
 | `build_qmt_fills.py` | 从委托/成交/候选/预测中整理真实买入、卖出 |
 | `build_daily_buys.py` | `daily_buys_snapshot.json` + 最新日买入分钟图 |
 | `build_daily_sells.py` | `daily_sells_snapshot.json` + 最新日卖出分钟图 |

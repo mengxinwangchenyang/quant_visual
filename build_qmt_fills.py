@@ -17,11 +17,10 @@ import sys
 from pathlib import Path
 from typing import Any, Dict, List
 
-VISUAL_ROOT = Path(__file__).resolve().parent
-PROJECT_ROOT = VISUAL_ROOT.parent
-for _d in (str(PROJECT_ROOT / "auto_buy"), str(PROJECT_ROOT)):
-    if _d not in sys.path:
-        sys.path.insert(0, _d)
+from project_paths import PROJECT_ROOT, VISUAL_ROOT
+
+if str(PROJECT_ROOT / "auto_buy") not in sys.path:
+    sys.path.insert(0, str(PROJECT_ROOT / "auto_buy"))
 
 import config
 

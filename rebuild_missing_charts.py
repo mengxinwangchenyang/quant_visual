@@ -11,11 +11,8 @@ import json
 import sys
 from pathlib import Path
 
-PROJECT_ROOT = Path(__file__).resolve().parents[1]
-if str(PROJECT_ROOT) not in sys.path:
-    sys.path.insert(0, str(PROJECT_ROOT))
+from project_paths import VISUAL_ROOT
 
-VISUAL_ROOT = PROJECT_ROOT / "visual"
 BUY_SNAP = VISUAL_ROOT / "daily_buys_snapshot.json"
 SELL_SNAP = VISUAL_ROOT / "daily_sells_snapshot.json"
 BUY_CHART_DIR = VISUAL_ROOT / "daily_buy_charts"
@@ -133,7 +130,7 @@ def rebuild_sells(build_daily_buys, build_daily_sells):
 
 
 def main():
-    from visual import build_daily_buys, build_daily_sells
+    import build_daily_buys, build_daily_sells
     rebuild_buys(build_daily_buys)
     rebuild_sells(build_daily_buys, build_daily_sells)
 
