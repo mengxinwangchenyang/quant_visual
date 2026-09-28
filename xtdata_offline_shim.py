@@ -1,7 +1,6 @@
 # -*- coding: utf-8 -*-
 """离线 xtdata 替身：用 QMT 客户端内导出的日线(qmt_local/qmt_history_data.json)
-充当 xtquant.xtdata，让 backfill_historical_strategies.replay 在本机(xtdata 离线)
-原样跑完 13 策略预估。
+充当 xtquant.xtdata，供可视化在本机(xtdata 离线)构建个股分钟图、查询名称与中证1000成分。
 
 只实现回放路径用到的方法：
   - get_market_data_ex：日线直接返回；分钟(period="1m")由**当日日线合成**几条帧

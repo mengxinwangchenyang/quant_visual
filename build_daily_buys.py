@@ -1,4 +1,6 @@
 # -*- coding: utf-8 -*-
+"""Build daily_buys_snapshot.json + daily_buy_charts/<date>.json from quant_fresh's
+real QMT fills, planned orders and cash ledger. Read-only toward all trading data."""
 import datetime as dt
 import json
 import os
@@ -13,24 +15,17 @@ PROJECT_ROOT = Path(__file__).resolve().parents[1]
 if str(PROJECT_ROOT) not in sys.path:
     sys.path.insert(0, str(PROJECT_ROOT))
 
-from xtquant import xtdata
-
+from visual import build_qmt_fills as qf
 from visual import xtdata_offline_shim
 
-import multi_strategy
-import qmt_broker
-import strategy
-import strategy_cash_ledger
+import config
 import util
 
 
 VISUAL_ROOT = Path(__file__).resolve().parent
-QMT_LOCAL = PROJECT_ROOT / "qmt_local"
-CSI1000_FILE = QMT_LOCAL / "qmt_csi1000.json"
 OUTPUT_PATH = VISUAL_ROOT / "daily_buys_snapshot.json"
 CHART_DIR = VISUAL_ROOT / "daily_buy_charts"
-ESTIMATE_PATH = VISUAL_ROOT / "historical_buy_estimates.json"
-CASH_LEDGER_PATH = PROJECT_ROOT / "virtual_qmt_data" / "strategy_cash_ledger.json"
+CASH_LEDGER_PATH = PROJECT_ROOT / "cash_ledger" / "strategy_cash_ledger.json"
 STRATEGY_META = {
     "s1": {"signal": "14:53按Score2全市场前0.8%（向下取整）与中证1000取交集后买入，当日可用资金均分买入（初始资金50万）；次日+9%限价止盈，10:00强制卖出", "capital": "50万均分"},
     "s2": {"signal": "14:53按Score2全市场前1.17%（向下取整）与中证1000取交集后买入，当日可用资金均分买入（初始资金50万）；次日+9%限价止盈，10:00强制卖出", "capital": "50万均分"},
@@ -113,16 +108,23 @@ def iter_dict_values(value: Any) -> Iterable[Dict[str, Any]]:
     return (item for item in value.values() if isinstance(item, dict))
 
 
+def is_trade_date(text: str) -> bool:
+    try:
+        return util.is_trading_day(dt.datetime.strptime(text, "%Y%m%d").date(), use_api=False)
+    except ValueError:
+        return False
+
+
 def _strategy_initial_cash(strategy_id: str) -> float:
-    config = multi_strategy.STRATEGY_CONFIGS.get(strategy_id) or {}
-    return safe_float(config.get("initial_cash"))
+    cfg = config.STRATEGY_CONFIGS.get(strategy_id) or {}
+    return safe_float(cfg.get("initial_cash"))
 
 
 def _cash_map(value: Any) -> Dict[str, float]:
     if not isinstance(value, dict):
         return {}
     result: Dict[str, float] = {}
-    for strategy_id in multi_strategy.STRATEGY_CONFIGS:
+    for strategy_id in config.STRATEGY_CONFIGS:
         cash = optional_float(value.get(strategy_id))
         if cash is not None:
             result[strategy_id] = cash
@@ -161,7 +163,7 @@ def load_strategy_cash_timeline(path: Path = CASH_LEDGER_PATH) -> Dict[Tuple[str
         return {}
 
     source = str(payload.get("cash_source_mode") or path.name)
-    initial_cash = {strategy_id: _strategy_initial_cash(strategy_id) for strategy_id in multi_strategy.STRATEGY_CONFIGS}
+    initial_cash = {strategy_id: _strategy_initial_cash(strategy_id) for strategy_id in config.STRATEGY_CONFIGS}
     prior_after_buy = dict(initial_cash)
     timeline: Dict[Tuple[str, str], Dict[str, Any]] = {}
     for trade_date, account in daily_items:
@@ -170,7 +172,7 @@ def load_strategy_cash_timeline(path: Path = CASH_LEDGER_PATH) -> Dict[Tuple[str
         cash_before_buy = _cash_map(account.get("cash_before_buy"))
         cash_after_buy = _cash_map(account.get("cash_after_buy"))
         next_prior: Dict[str, float] = {}
-        for strategy_id in multi_strategy.STRATEGY_CONFIGS:
+        for strategy_id in config.STRATEGY_CONFIGS:
             default_before_sell = prior_after_buy.get(strategy_id, initial_cash.get(strategy_id, 0.0))
             before_sell = cash_before_sell.get(strategy_id, default_before_sell)
             after_sell = cash_after_sells.get(strategy_id, before_sell)
@@ -201,18 +203,13 @@ def strategy_cash_timeline_source(cash_timeline: Optional[Dict[Tuple[str, str], 
 
 
 def _chart_xtdata():
-    """Prefer the local offline shim so chart building does not depend on a live
-    xtquant service. If the shim cannot be initialized, fall back to the real
-    xtdata object."""
-    try:
-        return xtdata_offline_shim.OfflineXtData()
-    except Exception:
-        return xtdata
+    """Chart/name lookups read the local QMT exports (qmt_local/*.json) through the
+    offline shim; the visual never talks to a live xtquant service."""
+    return xtdata_offline_shim.OfflineXtData()
 
 
 def collect_trade_dates(
     root: Dict[str, Any],
-    estimates: Optional[Dict[str, Any]] = None,
     cash_timeline: Optional[Dict[Tuple[str, str], Dict[str, Any]]] = None,
 ) -> List[str]:
     dates = set()
@@ -224,16 +221,11 @@ def collect_trade_dates(
         text = str(plan.get("buy_date") or "")[:8]
         if len(text) == 8 and text.isdigit():
             dates.add(text)
-    estimate_days = (estimates or {}).get("days", {})
-    if isinstance(estimate_days, dict):
-        for value in estimate_days:
-            text = str(value)
-            if len(text) == 8 and text.isdigit():
-                dates.add(text)
     for key in (cash_timeline or {}):
         trade_date = str(key[0]) if isinstance(key, tuple) and key else ""
         if len(trade_date) == 8 and trade_date.isdigit():
             dates.add(trade_date)
+    dates = {d for d in dates if d >= qf.order_cutoff() and is_trade_date(d)}
     if not dates:
         dates.add(dt.date.today().strftime("%Y%m%d"))
     return sorted(dates, reverse=True)[:40]
@@ -278,62 +270,6 @@ def plan_row(plan: Dict[str, Any], names: Dict[str, str]) -> Dict[str, Any]:
     }
 
 
-def real_cutoff() -> str:
-    """真实层起点(=估算档 real_order_start_date,现 0820)。cutoff 之前的日子统一走预估
-    叙事:旧 m 时代的 buy_attempts/plans(如 0814 的 m2b/m3b 真实成交)不得压制预估层,
-    否则买入页显真实、卖出页显预估,两页对不上(用户 0820 反馈 s2/s3 0814买/0817卖不一致)。"""
-    try:
-        from visual import build_qmt_fills as qf
-    except Exception:  # noqa: BLE001
-        import build_qmt_fills as qf
-    try:
-        return qf.order_cutoff()
-    except Exception:  # noqa: BLE001
-        return "20260820"
-
-
-def legacy_codes_for_historical_attempt(state: Dict[str, Any], trade_date: str) -> set:
-    codes = set()
-    plans = state.get("position_plans", {}) if isinstance(state, dict) else {}
-    for plan in iter_dict_values(plans):
-        if str(plan.get("sell_date") or "") == trade_date and safe_int(plan.get("filled_shares")) > 0:
-            code = str(plan.get("code") or "")
-            if code:
-                codes.add(code)
-    return codes
-
-
-def prediction_items_for_date(root: Dict[str, Any], trade_date: str) -> List[Dict[str, Any]]:
-    predictions = root.get("predictions", {}) if isinstance(root.get("predictions"), dict) else {}
-    direct = predictions.get(f"{trade_date}:{trade_date}")
-    if isinstance(direct, list):
-        return direct
-    for key, value in predictions.items():
-        if str(key).startswith(f"{trade_date}:") and isinstance(value, list):
-            return value
-    return []
-
-
-def qmt_csi1000_pool() -> set:
-    try:
-        doc = json.loads(CSI1000_FILE.read_text(encoding="utf-8-sig"))
-    except Exception:
-        return set()
-    return set(str(code).strip() for code in (doc.get("codes") or []) if str(code).strip())
-
-
-def select_strategies_with_qmt_csi(items: Sequence[Dict[str, Any]]) -> Dict[str, List[str]]:
-    pool = qmt_csi1000_pool()
-    if not pool:
-        return strategy.select_strategies(items)
-    original = strategy.resolve_target_pools
-    try:
-        strategy.resolve_target_pools = lambda: {"csi1000": pool, "kcb": set()}
-        return strategy.select_strategies(items)
-    finally:
-        strategy.resolve_target_pools = original
-
-
 def plan_lookup(root: Dict[str, Any]) -> Dict[Tuple[str, str, str], Dict[str, Any]]:
     result = {}
     for plan in iter_dict_values(root.get("plans", {})):
@@ -343,85 +279,24 @@ def plan_lookup(root: Dict[str, Any]) -> Dict[Tuple[str, str, str], Dict[str, An
 
 
 def backfill_candidate_map(
-    state: Dict[str, Any],
+    root: Dict[str, Any],
     dates: Sequence[str],
-    estimates: Optional[Dict[str, Any]] = None,
 ) -> Dict[Tuple[str, str], List[Dict[str, Any]]]:
-    root = state.get(multi_strategy.STATE_KEY, {}) if isinstance(state, dict) else {}
-    root = root if isinstance(root, dict) else {}
+    """Per (date, strategy) candidate decisions. Every attempt injected by
+    build_qmt_fills.buy_injection already carries its full candidate list."""
     attempts = root.get("buy_attempts", {}) if isinstance(root.get("buy_attempts"), dict) else {}
     plan_by_key = plan_lookup(root)
     result: Dict[Tuple[str, str], List[Dict[str, Any]]] = {}
-    selection_cache: Dict[str, Dict[str, List[str]]] = {}
-    latest_date = dates[0] if dates else ""
-    estimate_days = (estimates or {}).get("days", {})
-    estimate_days = estimate_days if isinstance(estimate_days, dict) else {}
-    cutoff = real_cutoff()
     for trade_date in dates:
-        estimate_day = estimate_days.get(trade_date, {})
-        estimate_strategies = estimate_day.get("strategies", {}) if isinstance(estimate_day, dict) else {}
-        estimate_strategies = estimate_strategies if isinstance(estimate_strategies, dict) else {}
-        # cutoff 前的旧 attempt 整体忽略(纯预估叙事),cutoff 起才认 attempt。
-        day_attempts = attempts if trade_date >= cutoff else {}
-        missing_ids = [
-            strategy_id
-            for strategy_id in multi_strategy.STRATEGY_CONFIGS
-            if strategy_id not in estimate_strategies
-            and bool(day_attempts.get(f"{trade_date}:{strategy_id}"))
-            and not isinstance((day_attempts.get(f"{trade_date}:{strategy_id}") or {}).get("candidates"), list)
-        ]
-        if missing_ids:
-            items = prediction_items_for_date(root, trade_date)
-            selection_cache[trade_date] = select_strategies_with_qmt_csi(items) if items else {}
-        selections = selection_cache.get(trade_date, {})
-        all_selected = list(dict.fromkeys(code for strategy_id in missing_ids for code in selections.get(strategy_id, [])))
-        prices = qmt_broker.get_last_prices(all_selected) if trade_date == latest_date and all_selected else {}
-        up_prices = qmt_broker.get_buy_limit_prices(all_selected, prices) if prices else {}
-        historical_skip = legacy_codes_for_historical_attempt(state, trade_date)
-        for strategy_id in multi_strategy.STRATEGY_CONFIGS:
-            attempt = day_attempts.get(f"{trade_date}:{strategy_id}", {})
+        for strategy_id in config.STRATEGY_CONFIGS:
+            attempt = attempts.get(f"{trade_date}:{strategy_id}", {})
             attempt = attempt if isinstance(attempt, dict) else {}
-            estimate = estimate_strategies.get(strategy_id, {})
-            estimate = estimate if isinstance(estimate, dict) else {}
             stored = attempt.get("candidates")
-            if estimate and not attempt:
-                decisions = [dict(item) for item in estimate.get("candidates", []) if isinstance(item, dict)]
-                for decision in decisions:
-                    decision["reason_source"] = "historical_estimate"
-                    decision["reason_source_label"] = str(estimate_day.get("source_label") or "14:53历史行情估算")
-                    decision["estimated"] = True
-            elif isinstance(stored, list):
-                decisions = [dict(item) for item in stored if isinstance(item, dict)]
-                for decision in decisions:
-                    decision["reason_source"] = "recorded"
-            elif attempt:
-                codes = list(selections.get(strategy_id, []))
-                expected_count = safe_int(attempt.get("candidate_count"))
-                filtered_codes = [code for code in codes if code not in historical_skip]
-                if expected_count and len(filtered_codes) == expected_count:
-                    codes = filtered_codes
-                elif expected_count and len(codes) > expected_count:
-                    codes = codes[:expected_count]
-                if trade_date == latest_date and codes:
-                    _accepted, _stats, decisions = multi_strategy.evaluate_buy_candidates(
-                        strategy_id,
-                        codes,
-                        trade_date,
-                        prices,
-                        up_prices,
-                    )
-                else:
-                    decisions = [
-                        {"rank": rank, "code": code, "price": 0.0, "up_price": 0.0, "eligible": False, "reason": "unknown"}
-                        for rank, code in enumerate(codes, start=1)
-                    ]
-                for decision in decisions:
-                    decision["reason_source"] = "reconstructed"
-            else:
-                decisions = []
+            decisions = [dict(item) for item in stored if isinstance(item, dict)] if isinstance(stored, list) else []
             for decision in decisions:
+                decision["reason_source"] = decision.get("reason_source") or "recorded"
                 code = str(decision.get("code") or "")
-                plan = plan_by_key.get((trade_date, strategy_id, code)) if trade_date >= cutoff else None
+                plan = plan_by_key.get((trade_date, strategy_id, code))
                 if plan:
                     decision["reason"] = "submitted"
                     decision["eligible"] = True
@@ -437,34 +312,24 @@ def backfill_candidate_map(
             result[(trade_date, strategy_id)] = decisions
     return result
 
-
 def build_day(
     root: Dict[str, Any],
     trade_date: str,
     names: Dict[str, str],
     candidate_map: Optional[Dict[Tuple[str, str], List[Dict[str, Any]]]] = None,
-    estimates: Optional[Dict[str, Any]] = None,
     cash_timeline: Optional[Dict[Tuple[str, str], Dict[str, Any]]] = None,
 ) -> Dict[str, Any]:
     attempts = root.get("buy_attempts", {}) if isinstance(root.get("buy_attempts"), dict) else {}
-    cutoff = real_cutoff()
-    # cutoff 前统一预估叙事:旧真实 plans/attempt 不入页(与卖出页的预估口径保持一致)。
     plans = [
         plan_row(plan, names)
         for plan in iter_dict_values(root.get("plans", {}))
-        if str(plan.get("buy_date") or "") == trade_date and trade_date >= cutoff
+        if str(plan.get("buy_date") or "") == trade_date
     ]
     strategies = []
-    estimate_days = (estimates or {}).get("days", {})
-    estimate_day = estimate_days.get(trade_date, {}) if isinstance(estimate_days, dict) else {}
-    estimate_strategies = estimate_day.get("strategies", {}) if isinstance(estimate_day, dict) else {}
-    estimate_strategies = estimate_strategies if isinstance(estimate_strategies, dict) else {}
-    for strategy_id, config in multi_strategy.STRATEGY_CONFIGS.items():
-        attempt = attempts.get(f"{trade_date}:{strategy_id}", {}) if trade_date >= cutoff else {}
+    for strategy_id, strategy_cfg in config.STRATEGY_CONFIGS.items():
+        attempt = attempts.get(f"{trade_date}:{strategy_id}", {})
         attempt = attempt if isinstance(attempt, dict) else {}
-        estimate = estimate_strategies.get(strategy_id, {}) if not attempt else {}
-        estimate = estimate if isinstance(estimate, dict) else {}
-        summary_source = attempt or estimate
+        summary_source = attempt
         strategy_plans = [row for row in plans if row["strategy_id"] == strategy_id]
         candidates = [dict(item) for item in (candidate_map or {}).get((trade_date, strategy_id), [])]
         for item in candidates:
@@ -488,11 +353,11 @@ def build_day(
         strategies.append(
             {
                 "id": strategy_id,
-                "name": str(config["name"]),
+                "name": str(strategy_cfg["name"]),
                 "signal": STRATEGY_META[strategy_id]["signal"],
                 "capital": STRATEGY_META[strategy_id]["capital"],
                 "attempted": bool(attempt),
-                "estimated": bool(estimate),
+                "estimated": False,
                 "attempt_time": str(summary_source.get("time") or "")[11:19],
                 "candidate_count": safe_int(summary_source.get("candidate_count")),
                 "accepted_count": safe_int(summary_source.get("accepted_count")),
@@ -519,7 +384,7 @@ def build_day(
         "chart_path": f"./daily_buy_charts/{trade_date}.json",
         "completed_strategy_count": sum(1 for row in strategies if row["attempted"]),
         "estimated_strategy_count": sum(1 for row in strategies if row["estimated"]),
-        "estimate_source_label": str(estimate_day.get("source_label") or "") if isinstance(estimate_day, dict) else "",
+        "estimate_source_label": "",
         "candidate_count": sum(row["candidate_count"] for row in strategies),
         "accepted_count": sum(row["accepted_count"] for row in strategies),
         "submitted_count": sum(row["submitted_count"] for row in strategies),
@@ -532,16 +397,13 @@ def build_day(
     }
 
 
-def build_snapshot_from_state(
-    state: Dict[str, Any],
+def build_snapshot_from_root(
+    root: Dict[str, Any],
     names: Optional[Dict[str, str]] = None,
     candidate_map: Optional[Dict[Tuple[str, str], List[Dict[str, Any]]]] = None,
-    estimates: Optional[Dict[str, Any]] = None,
     cash_timeline: Optional[Dict[Tuple[str, str], Dict[str, Any]]] = None,
 ) -> Dict[str, Any]:
-    root = state.get(multi_strategy.STATE_KEY, {}) if isinstance(state, dict) else {}
-    root = root if isinstance(root, dict) else {}
-    dates = collect_trade_dates(root, estimates, cash_timeline)
+    dates = collect_trade_dates(root, cash_timeline)
     codes = sorted(
         {
             str(plan.get("code") or "")
@@ -562,7 +424,7 @@ def build_snapshot_from_state(
         "schedule": "周一至周五 15:30",
         "cash_source": strategy_cash_timeline_source(cash_timeline),
         "latest_date": dates[0],
-        "days": [build_day(root, trade_date, stock_names, candidate_map, estimates, cash_timeline) for trade_date in dates],
+        "days": [build_day(root, trade_date, stock_names, candidate_map, cash_timeline) for trade_date in dates],
     }
 
 
@@ -677,77 +539,26 @@ def write_snapshot(snapshot: Dict[str, Any], output_path: Path = OUTPUT_PATH) ->
     return write_json(snapshot, output_path)
 
 
-def load_historical_estimates(path: Path = ESTIMATE_PATH) -> Dict[str, Any]:
-    if not path.exists():
-        return {"schema_version": 1, "days": {}}
-    try:
-        value = json.loads(path.read_text(encoding="utf-8"))
-    except (OSError, json.JSONDecodeError):
-        return {"schema_version": 1, "days": {}}
-    return value if isinstance(value, dict) else {"schema_version": 1, "days": {}}
-
-
-def inject_real_fills(root: Dict[str, Any], cutoff: str = None) -> Dict[str, str]:
-    """Fold real QMT-native sim fills (trade_date >= cutoff) into the state root's
-    plans + buy_attempts so the main buy pages show today's real virtual-account
-    orders instead of the (empty) miniQMT ledger. Also surfaces the brain's
-    planned-but-unfilled orders (qmt_orders.json) as "未成交" candidates so a day
-    with zero fills still shows what the strategies chose. Mutates root in place;
-    returns the {code: name} map. Dates < cutoff stay on estimates."""
-    try:
-        from visual import build_qmt_fills as qf
-    except Exception:
-        import build_qmt_fills as qf
-    if cutoff is None:
-        cutoff = qf.order_cutoff()  # 与估算档 real_order_start_date 同步（默认 0820）
-    try:
-        qf.accumulate_archive()  # fold the current live fills snapshot into the durable archive
-    except Exception as exc:
-        print(f"archive accumulate skipped: {exc}")
-    try:
-        # buy_injection = real fills + the planned/未成交 candidate layer.
-        plans, attempts, names = qf.buy_injection(cutoff=cutoff)
-    except Exception as exc:
-        print(f"real buy injection skipped: {exc}")
-        return {}
-    if plans:
-        rp = root.get("plans")
-        if not isinstance(rp, dict):
-            rp = {}
-            root["plans"] = rp
-        # Real fills supersede any state.json plan for the same window.
-        for key in list(rp.keys()):
-            existing = rp.get(key) or {}
-            if str(existing.get("buy_date") or "") >= cutoff:
-                rp.pop(key, None)
-        rp.update(plans)
-    if attempts:
-        ra = root.get("buy_attempts")
-        if not isinstance(ra, dict):
-            ra = {}
-            root["buy_attempts"] = ra
-        ra.update(attempts)
+def inject_real_fills(root: Dict[str, Any]) -> Dict[str, str]:
+    """Load real QMT fills plus the planned/"未成交" candidate layer (qmt_orders.json,
+    qmt_buy_candidates.json, prediction archive) into root's plans + buy_attempts.
+    Mutates root in place; returns the {code: name} map from the fill rows."""
+    plans, attempts, names = qf.buy_injection()
+    root.setdefault("plans", {}).update(plans)
+    root.setdefault("buy_attempts", {}).update(attempts)
     return names
 
 
 def main() -> int:
-    state = util.load_state()
-    root = state.get(multi_strategy.STATE_KEY, {}) if isinstance(state, dict) else {}
-    if not isinstance(root, dict):
-        root = {}
-    if isinstance(state, dict):
-        state[multi_strategy.STATE_KEY] = root
-    estimates = load_historical_estimates()
-    strategy_cash_ledger.refresh_strategy_cash_ledger(output_path=CASH_LEDGER_PATH)
+    root: Dict[str, Any] = {}
     cash_timeline = load_strategy_cash_timeline()
     fill_names = inject_real_fills(root)
-    dates = collect_trade_dates(root, estimates, cash_timeline)
-    util.connect_market_data()
-    candidate_map = backfill_candidate_map(state, dates, estimates)
+    dates = collect_trade_dates(root, cash_timeline)
+    candidate_map = backfill_candidate_map(root, dates)
     codes = sorted({str(item.get("code") or "") for items in candidate_map.values() for item in items if item.get("code")})
     names = resolve_stock_names(codes)
     names.update(fill_names)
-    snapshot = build_snapshot_from_state(state, names, candidate_map, estimates, cash_timeline)
+    snapshot = build_snapshot_from_root(root, names, candidate_map, cash_timeline)
     target = write_snapshot(snapshot)
     latest_date = snapshot["latest_date"]
     latest_codes = sorted(

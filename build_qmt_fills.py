@@ -1,14 +1,14 @@
 # -*- coding: utf-8 -*-
-"""Normalize the QMT-native executor output (qmt_local/qmt_fills.json) into a
-per-strategy snapshot the visualization can render.
+"""Turn quant_fresh's real QMT fills into the plans/attempts the daily pages render.
 
 The in-client executor writes ORDER / DEAL rows tagged with m_strRemark (the bare
-strategy id, e.g. "s1"). This groups those rows by strategy and maps each to the
-same shape the virtual-ledger buy pages use, so real sim-broker fills (account
-90007892) can be shown alongside — but visually separate from — the virtual system.
+strategy id "s1" for buys, date-scoped "s2-260904-003031e" style tags for sells).
+buy_injection / real_sell_injection group those rows by strategy and emit the
+shapes build_daily_buys / build_daily_sells render.
 
-Run: python visual/build_qmt_fills.py
-Output: visual/qmt_fills_snapshot.json
+STRICTLY READ-ONLY: the deal archive, orders, candidates and buy state all belong
+to the trading pipeline (daily_refresh / qmt_auto_buy / exec_logic). This module
+never writes any of them.
 """
 import datetime as dt
 import json
@@ -19,36 +19,20 @@ from typing import Any, Dict, List
 
 VISUAL_ROOT = Path(__file__).resolve().parent
 PROJECT_ROOT = VISUAL_ROOT.parent
-if str(PROJECT_ROOT) not in sys.path:
-    sys.path.insert(0, str(PROJECT_ROOT))
+for _d in (str(PROJECT_ROOT / "auto_buy"), str(PROJECT_ROOT)):
+    if _d not in sys.path:
+        sys.path.insert(0, _d)
 
-import multi_strategy
+import config
 
 FILLS_PATH = PROJECT_ROOT / "qmt_local" / "qmt_fills.json"
-ORDERS_PATH = PROJECT_ROOT / "qmt_local" / "qmt_orders.json"
-BUY_CANDIDATES_PATH = PROJECT_ROOT / "qmt_local" / "qmt_buy_candidates.json"
+ORDERS_PATH = PROJECT_ROOT / "auto_buy" / "qmt_orders.json"
+BUY_CANDIDATES_PATH = PROJECT_ROOT / "auto_buy" / "qmt_buy_candidates.json"
 BUY_STATE_PATH = PROJECT_ROOT / "qmt_local" / "qmt_buy_state.json"
 DATA_ROOT = PROJECT_ROOT / "virtual_qmt_data"
 BUY_CHART_ROOT = VISUAL_ROOT / "daily_buy_charts"
-OUTPUT_PATH = VISUAL_ROOT / "qmt_fills_snapshot.json"
 
-# m_nOrderStatus codes reported by QMT COrderDetail.
-ORDER_STATUS_LABELS = {
-    48: "未报",
-    49: "待报",
-    50: "已报",
-    51: "已报待撤",
-    52: "部成待撤",
-    53: "部撤",
-    54: "已撤",
-    55: "部成",
-    56: "已成",
-    57: "废单",
-}
-OPTYPE_LABELS = {23: "buy", 24: "sell"}
-
-
-ARCHIVE_PATH = PROJECT_ROOT / "qmt_local" / "qmt_deal_archive.json"
+ARCHIVE_PATH = PROJECT_ROOT / "daily_refresh" / "qmt_deal_archive.json"
 
 
 def _parse_archive_rows(text: str, section_name: str) -> List[Dict[str, Any]]:
@@ -179,24 +163,12 @@ def _merge_sections(base: Dict[str, Any], extra: Dict[str, Any]) -> Dict[str, An
     return base
 
 
-def accumulate_archive(live: Dict[str, Any] = None) -> Dict[str, Any]:
-    """Merge the live (ephemeral) fills snapshot into the durable archive and
-    persist it. fills.json is overwritten every executor bar and often reads
-    empty; the archive is the append-only source of truth the viz builds from."""
-    if live is None:
-        live = _read_json_file(FILLS_PATH)
-    archive = _read_json_file(ARCHIVE_PATH)
-    if not isinstance(archive, dict):
-        archive = {}
-    _merge_sections(archive, live if isinstance(live, dict) else {})
-    with ARCHIVE_PATH.open("w", encoding="utf-8") as handle:
-        json.dump(archive, handle, ensure_ascii=False, indent=2)
-    return archive
-
-
 def _load_fills() -> Dict[str, Any]:
     """Return the union of the durable archive and the live snapshot so a rebuild
-    never loses real fills just because the current executor bar read empty."""
+    never loses real fills just because the current executor bar read empty.
+
+    The archive is only folded forward by daily_refresh at 15:35, so intraday the
+    live qmt_fills.json is what carries today's rows. The union is in-memory only."""
     live = _read_json_file(FILLS_PATH)
     archive = _read_json_file(ARCHIVE_PATH)
     if not archive:
@@ -228,95 +200,15 @@ def _code(row: Dict[str, Any]) -> str:
     return inst
 
 
-def _normalize_row(row: Dict[str, Any]) -> Dict[str, Any]:
-    status = int(row.get("m_nOrderStatus") or 0)
-    op = int(row.get("m_nOpType") or 0)
-    traded_price = float(row.get("m_dTradedPrice") or 0.0)
-    limit_price = float(row.get("m_dLimitPrice") or 0.0)
-    return {
-        "strategy_id": str(row.get("m_strRemark") or "").strip(),
-        "code": _code(row),
-        "name": str(row.get("m_strInstrumentName") or "").strip(),
-        "side": OPTYPE_LABELS.get(op, str(op)),
-        "op_name": str(row.get("m_strOptName") or "").strip(),
-        "order_id": str(row.get("m_strOrderSysID") or "").strip(),
-        "submit_date": _fmt_date(row.get("m_strInsertDate")),
-        "submit_time": _fmt_time(row.get("m_strInsertTime")),
-        "shares": int(row.get("m_nVolumeTotalOriginal") or 0),
-        "filled_shares": int(row.get("m_nVolumeTraded") or 0),
-        "limit_price": round(limit_price, 4),
-        "buy_price": round(traded_price if traded_price > 0 else limit_price, 4),
-        "traded_price": round(traded_price, 4),
-        "status": status,
-        "status_label": ORDER_STATUS_LABELS.get(status, str(status)),
-        "error": str(row.get("m_strErrorMsg") or "").strip(),
-        "account": str(row.get("m_strAccountID") or "").strip(),
-    }
-
-
-def build_snapshot() -> Dict[str, Any]:
-    fills = _load_fills()
-    orders_deals = fills.get("orders_deals") or {}
-    order_section = orders_deals.get("ORDER") if isinstance(orders_deals, dict) else None
-    deal_section = orders_deals.get("DEAL") if isinstance(orders_deals, dict) else None
-    order_rows = (order_section or {}).get("rows") or []
-    deal_rows = (deal_section or {}).get("rows") or []
-
-    normalized = [_normalize_row(row) for row in order_rows if isinstance(row, dict)]
-    normalized.sort(key=lambda item: (item["strategy_id"], item["submit_time"], item["code"]))
-
-    strategies: Dict[str, List[Dict[str, Any]]] = {}
-    for item in normalized:
-        strategies.setdefault(item["strategy_id"] or "unknown", []).append(item)
-
-    return {
-        "schema_version": 1,
-        "generated_at": dt.datetime.now().isoformat(timespec="seconds"),
-        "source_label": "QMT在端执行器实盘模拟成交（模拟账户90007892）",
-        "executor_generated": fills.get("generated"),
-        "executor_version": fills.get("logic_version"),
-        "account": fills.get("account_in_use"),
-        "live": bool(fills.get("live")),
-        "order_count": len(normalized),
-        "deal_count": len(deal_rows),
-        "strategy_ids": sorted(strategies.keys()),
-        "strategies": strategies,
-        "orders": normalized,
-    }
-
-
 # ---------------------------------------------------------------------------
-# Fold real QMT-native fills into the MAIN daily buys/sells visualization.
-# For trade_date >= CUTOFF_DATE the virtual system's orders ARE these real sim
-# fills (executor account 90007892); earlier dates stay on the estimate layer.
-# These helpers read qmt_fills.json only (no xtdata) and emit shapes the daily
-# builders inject directly, carrying names from the fill rows themselves.
+# Fold real QMT-native fills into the daily buys/sells visualization. Every
+# trade_date >= config.START_DATE is rendered from these real sim fills; the
+# helpers read local exports only (no xtdata) and emit the shapes the daily
+# builders inject directly.
 # ---------------------------------------------------------------------------
-CUTOFF_DATE = "20260820"  # fallback only; 实际 cutoff 由 order_cutoff() 从估算档派生
-
-# 估算档路径（historical_buy_estimates.json 的 real_order_start_date = 真实层起点）。
-_ESTIMATE_PATH = (Path(__file__).resolve().parent / "historical_buy_estimates.json")
-
-
 def order_cutoff() -> str:
-    """真实成交注入的起始日 = 估算档 real_order_start_date（买入冻结点的下一交易日）。
-
-    单一真相源：改 backfill_offline.BUY_FREEZE_DATE 重跑 replay 后，估算档写入新的
-    real_order_start_date，这里即随之前移。取不到时回退 CUTOFF_DATE。"""
-    try:
-        doc = json.loads(_ESTIMATE_PATH.read_text(encoding="utf-8-sig"))
-        d = str((doc or {}).get("real_order_start_date") or "").strip()
-        if len(d) == 8:
-            return d
-    except Exception:
-        pass
-    return CUTOFF_DATE
-
-# 用户逐笔指认的"手动/测试"成交，键 = (交易日, 6位代码)。这些成交在买入 AND 卖出两侧
-# 都完全不计入可视化（既非13策略批次，也不是真实策略持仓）。逐笔加入即可。
-TEST_FILLS = {
-    ("20260818", "600000"),  # 浦发银行——11:00 孤立手动测试单（策略批次统一在14:56成交）
-}
+    """真实成交注入的起始日 = config.START_DATE（虚拟盘重置日）。"""
+    return str(config.START_DATE)
 
 
 def _code6(code) -> str:
@@ -324,42 +216,25 @@ def _code6(code) -> str:
     return str(code or "").split(".", 1)[0].strip()
 
 
-def _is_test_fill(trade_date, code) -> bool:
-    return (str(trade_date).strip(), _code6(code)) in TEST_FILLS
-
-
 def _known_strategy_ids() -> set:
-    try:
-        import multi_strategy
-        return set(multi_strategy.STRATEGY_CONFIGS.keys())
-    except Exception:
-        return {"s%d" % i for i in range(1, 14)}
+    return set(config.STRATEGY_CONFIGS.keys())
 
 
 def _strategy_name(strategy_id: str) -> str:
-    try:
-        import multi_strategy
-        cfg = multi_strategy.STRATEGY_CONFIGS.get(strategy_id) or {}
-        return str(cfg.get("name") or strategy_id)
-    except Exception:
-        return strategy_id
+    cfg = config.STRATEGY_CONFIGS.get(strategy_id) or {}
+    return str(cfg.get("name") or strategy_id)
 
 
 def _initial_cash(strategy_id: str) -> float:
-    try:
-        import multi_strategy
-        cfg = multi_strategy.STRATEGY_CONFIGS.get(strategy_id) or {}
-        return float(cfg.get("initial_cash") or 0.0)
-    except Exception:
-        return 0.0
-
+    cfg = config.STRATEGY_CONFIGS.get(strategy_id) or {}
+    return float(cfg.get("initial_cash") or 0.0)
 
 # --- 涨停(limit-up) exclusion for real buy fills ---------------------------
 # The live buy bridge had no near-limit guard before 2026-08-19, so on 0818 it
 # filled 65/66 buys at 涨停. Per user decision those real sim positions are left
 # as-is (executor now skips 涨停 via NEAR_LIMIT_RATIO=0.995), but the daily-buys
 # VIEW must not count 涨停 fills as valid buys — they render as excluded near_limit
-# candidates instead. Detection mirrors import_missed_prediction/multi_strategy:
+# candidates instead. Detection mirrors the brain's 涨停 filter:
 # up_limit = round(prev_close * (1 + band)); near_limit if price >= up_limit*0.995.
 # Self-contained (prev_close from qmt_history_data.json day bars) so the rebuild
 # needs no live xtdata. Sells (_buy_price_lookup) are deliberately NOT filtered so
@@ -737,8 +612,6 @@ def _group_buy_deals(fills: Dict[str, Any], cutoff: str) -> Dict[tuple, Dict[str
         code = _code(row)
         if not code:
             continue
-        if _is_test_fill(trade_date, code):  # 手动/测试单：买入侧完全剔除
-            continue
         vol = int(row.get("m_nVolume") or 0)
         price = float(row.get("m_dPrice") or 0.0)
         if vol <= 0 or price <= 0:
@@ -907,7 +780,9 @@ def _score_two_items(payload: Dict[str, Any]) -> List[Dict[str, Any]]:
         except (TypeError, ValueError):
             continue
         if code.endswith((".SH", ".SZ")) and math.isfinite(mean_value) and math.isfinite(std_value):
-            items.append({"stock_code": code, "mean": mean_value, "std": std_value})
+            # predict_client.numeric_score_field reads the nested scores/score_stds shape.
+            items.append({"stock_code": code, "mean": mean_value, "std": std_value,
+                          "scores": {"2": mean_value}, "score_stds": {"2": std_value}})
     return items
 
 
@@ -1063,12 +938,7 @@ def archived_prediction_buy_groups(cutoff: str = None) -> Dict[tuple, List[Dict[
     if cutoff is None:
         cutoff = order_cutoff()
     try:
-        import util
-        util.connect_market_data()
-    except Exception:
-        pass
-    try:
-        import strategy
+        import predict_client as strategy
     except Exception:
         return {}
     known = _known_strategy_ids()
@@ -1455,9 +1325,9 @@ def _fallback_buy_match(buys: Dict[tuple, Dict[str, Any]], sid: str, code: str) 
 
 
 def _target_price_for_sell(strategy_id: str, buy_price: float) -> float:
-    config = multi_strategy.STRATEGY_CONFIGS.get(strategy_id) or {}
+    cfg = config.STRATEGY_CONFIGS.get(strategy_id) or {}
     try:
-        rate = float(config.get("take_profit_rate") or 0.0)
+        rate = float(cfg.get("take_profit_rate") or 0.0)
     except (TypeError, ValueError):
         rate = 0.0
     return round(float(buy_price or 0.0) * (1.0 + rate), 4) if buy_price > 0 and rate > 0 else 0.0
@@ -1472,23 +1342,8 @@ def _proportional_commission(total_commission: float, sold_shares: int, buy_shar
 
 
 
-def _test_positions(fills: Dict[str, Any], cutoff: str) -> set:
-    """(strategy, code6) for buy fills the user tagged as manual/test (TEST_FILLS).
-    Its buy is dropped in _group_buy_deals; its later SELL (any date) is matched
-    here by position so both sides drop consistently."""
-    out = set()
-    for row in _iter_deal_rows(fills):
-        remark = str(row.get("m_strRemark") or "").strip()
-        code = _code(row)
-        trade_date = str(row.get("m_strTradeDate") or "").strip()
-        if remark and code and _is_test_fill(trade_date, code):
-            out.add((remark, _code6(code)))
-    return out
-
-
 def real_trade_dates(fills: Dict[str, Any] = None, cutoff: str = None) -> List[str]:
-    """Every date >= cutoff that has ANY real DEAL row (buy or sell), test fills
-    excluded. Lets the daily-sell page still render a (zero-sell) day for a date
+    """Every date >= cutoff that has ANY real DEAL row (buy or sell). Lets the daily-sell page still render a (zero-sell) day for a date
     the system actually traded — e.g. 0819 where the only sells were 涨停 positions
     that got ignored, so the day would otherwise vanish. Sorted desc."""
     if cutoff is None:
@@ -1498,7 +1353,7 @@ def real_trade_dates(fills: Dict[str, Any] = None, cutoff: str = None) -> List[s
     dates = set()
     for row in _iter_deal_rows(fills):
         d = str(row.get("m_strTradeDate") or "").strip()
-        if len(d) == 8 and d >= cutoff and not _is_test_fill(d, _code(row)):
+        if len(d) == 8 and d >= cutoff:
             dates.add(d)
     return sorted(dates, reverse=True)
 
@@ -1533,7 +1388,6 @@ def real_sell_injection(fills: Dict[str, Any] = None, cutoff: str = None) -> Dic
     known = _known_strategy_ids()
     buys = _buy_price_lookup(fills, cutoff)
     limit_up = _limit_up_positions(fills, cutoff)  # 涨停 bug 持仓 (sid, code6)：卖出一并忽略
-    test_pos = _test_positions(fills, cutoff)       # 测试单持仓 (sid, code6)：卖出一并忽略
     groups: Dict[tuple, Dict[str, Any]] = {}
     for row in _iter_deal_rows(fills):
         base_sid, buy_date_hint, code6_hint, action = _parse_sell_remark(row.get("m_strRemark"), known)
@@ -1551,8 +1405,6 @@ def real_sell_injection(fills: Dict[str, Any] = None, cutoff: str = None) -> Dic
         if not code or vol <= 0 or price <= 0:
             continue
         if code6_hint and _code6(code) != code6_hint:
-            continue
-        if (base_sid, _code6(code)) in test_pos:  # 手动/测试单持仓的卖出：剔除
             continue
         if (base_sid, _code6(code)) in limit_up:  # 涨停 bug 持仓的卖出：忽略
             continue
@@ -1598,9 +1450,8 @@ def real_sell_injection(fills: Dict[str, Any] = None, cutoff: str = None) -> Dic
         buy_commission = _proportional_commission(float(buy.get("commission") or 0.0), shares, buy_shares)
         target_price = _target_price_for_sell(sid, buy_price)
         if buy_date and buy_date < cutoff:
-            # 持仓建立于真实层起点(cutoff)之前 -> 属预估/脏数据时代(如 0818 涨停误成交),
-            # 其事后清理卖出(哪怕成交日 >= cutoff,如执行器停摆后次日补打的 t/e 单)不入 viz;
-            # 该时代的叙事由预估层完整给出。真实层只讲 cutoff 起新建仓位的买卖。
+            # 持仓建立于虚拟盘重置日(cutoff)之前 -> 旧账户时代的持仓,其清理卖出不入 viz;
+            # 只展示 cutoff 起新建仓位的买卖。
             continue
         name = grp["name"] or str(buy.get("name") or "")
         plan_key = "%s:%s:%s" % (sid, buy_date or trade_date, code)
@@ -1630,19 +1481,3 @@ def real_sell_injection(fills: Dict[str, Any] = None, cutoff: str = None) -> Dic
             "source": "qmt_real_fill",
         }
     return plans
-
-
-def main() -> None:
-    snapshot = build_snapshot()
-    with OUTPUT_PATH.open("w", encoding="utf-8") as handle:
-        json.dump(snapshot, handle, ensure_ascii=False, indent=2)
-    print("qmt fills snapshot updated: {}".format(OUTPUT_PATH))
-    print(
-        "orders={} deals={} strategies={}".format(
-            snapshot["order_count"], snapshot["deal_count"], snapshot["strategy_ids"]
-        )
-    )
-
-
-if __name__ == "__main__":
-    main()

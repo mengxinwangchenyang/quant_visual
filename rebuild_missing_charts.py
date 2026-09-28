@@ -1,15 +1,10 @@
 # -*- coding: utf-8 -*-
-"""定点重建"个股分钟图为空"的图表文件(如 0817 买入候选、0818 卖出跨窗票)。
+"""定点重建"个股分钟图为空或稀疏"的图表文件。
 
-背景:daily_buy_charts/<date>.json / daily_sell_charts/<date>.json 里每个 code 有一段
-"最近3交易日分钟K线"(charts[code].points)。个别历史日(0817 预估日、跨越分钟起点前的卖出
-票)当初生成时 xtdata 离线,points 为空 → 前端显示"未返回行情"。
-
-本脚本在**离线 shim** 下(xtdata_offline_shim._minute_frame 优先返回 QMT 客户端导出的真实
-分钟)**只重建当前含空点的图**,代码/窗口取自最新快照,绝不批量覆盖已正常的图。
-
-前置:先跑 export_minute_request.py 生成含这些代码的请求,再在 QMT 客户端重跑一次 QUANT.py
-导出 qmt_local/qmt_minute_data.json,最后跑本脚本。
+daily_buy_charts/<date>.json / daily_sell_charts/<date>.json 里每个 code 有一段分钟K线
+(charts[code].points)。build_daily_* 只为最新日建图;历史日若当时分钟导出不全,points 为空
+或只有日线合成的稀疏点。本脚本经离线 shim(优先读 qmt_local/qmt_minute_data.json 的真实分钟)
+**只重建当前含空点/稀疏的图**,代码/窗口取自最新快照,绝不覆盖已正常的图。
 """
 
 import json
@@ -19,8 +14,6 @@ from pathlib import Path
 PROJECT_ROOT = Path(__file__).resolve().parents[1]
 if str(PROJECT_ROOT) not in sys.path:
     sys.path.insert(0, str(PROJECT_ROOT))
-
-from visual import backfill_offline
 
 VISUAL_ROOT = PROJECT_ROOT / "visual"
 BUY_SNAP = VISUAL_ROOT / "daily_buys_snapshot.json"
@@ -140,9 +133,6 @@ def rebuild_sells(build_daily_buys, build_daily_sells):
 
 
 def main():
-    shim, _bf = backfill_offline.install_shim()
-    print("shim: 日线代码=%s 分钟代码=%s"
-          % (shim.meta.get("codes_with_bars"), shim.meta.get("codes_with_minute")))
     from visual import build_daily_buys, build_daily_sells
     rebuild_buys(build_daily_buys)
     rebuild_sells(build_daily_buys, build_daily_sells)
