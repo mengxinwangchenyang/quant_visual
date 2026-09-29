@@ -36,7 +36,7 @@ quant_fresh 的 `auto_buy/export_history_request.py`、`export_minute_request.py
 |---|---|
 | `refresh.bat`（或 `python refresh.py`） | 一次性重建全部快照与图表，日志 `refresh.log` |
 | `live_refresh.bat` | 盘中每 60 秒检查成交/分钟数据，变化即重建，15:10 自动退出，日志 `live_refresh.log` |
-| `serve.bat` | 启动网页 <http://127.0.0.1:5510/daily_buys.html> |
+| `serve.bat` | 启动网页 <http://127.0.0.1:5510/daily_buys.html>（其他机器用 `http://<本机IP>:5510/daily_buys.html`） |
 
 默认解释器 `C:\Python\Python38\python.exe`，可用环境变量 `PYTHON_EXE` 覆盖。
 
@@ -57,11 +57,46 @@ quant_fresh 的 `auto_buy/export_history_request.py`、`export_minute_request.py
 
 `*_snapshot.json`、`daily_buy_charts/`、`daily_sell_charts/` 是生成数据，不纳入版本控制，运行 `refresh.bat` 即可重建。
 
-## 本机定时任务
+## 部署到新机器
 
-| 任务 | 时间 | 动作 |
+前提：同一台机器上已按 [quant_fresh 的 README](https://github.com/mengxinwangchenyang/quant_fresh#部署到新机器) 部署好交易仓库，且 QMT 执行器在运行（数据由它导出）。
+
+```powershell
+cd <quant_fresh 所在的父目录>
+git clone https://github.com/mengxinwangchenyang/quant_visual.git
+cd quant_visual
+.\refresh.bat          # 首次生成快照与图表，查看 refresh.log 以 "visual refresh done" 结束
+.\serve.bat            # 浏览器打开 http://127.0.0.1:5510/daily_buys.html
+```
+
+依赖与 quant_fresh 相同（pandas 等，见其 `requirements.txt`），不需要额外安装。
+
+### 需要修改/确认的地方
+
+| 项 | 默认 | 何时要改 |
+|---|---|---|
+| 目录位置 | `../quant_fresh` | 不是同级时设置环境变量 `QUANT_FRESH_ROOT=<quant_fresh 路径>`；本仓库目录名必须是 `quant_visual` |
+| Python 路径 | `C:\Python\Python38\python.exe` | 不同时设置环境变量 `PYTHON_EXE` |
+| 端口 | `5510`，监听 `0.0.0.0` | 改 `serve_daily_buys.py` 的 `PORT` |
+| 起始日 | quant_fresh `config.START_DATE` | 本仓库不单独配置 |
+
+### 其他机器通过 IP 访问
+
+服务已监听所有网卡，另需：
+
+1. Windows 防火墙放行：`New-NetFirewallRule -DisplayName "QMT Visual Web 5510" -Direction Inbound -Protocol TCP -LocalPort 5510 -Action Allow`
+2. 云服务器（如阿里云 ECS）还要在**安全组**加入方向规则 TCP 5510，来源尽量只填自己的 IP。
+3. 或者用 Tailscale：`http://<本机 Tailscale IP>:5510/daily_buys.html`，无需开放公网。
+
+页面**没有登录验证**，能访问端口即可看到全部持仓与成交，不要对 `0.0.0.0/0` 开放。
+
+### 计划任务
+
+以 `cmd.exe /d /c "<quant_visual>\xxx.bat"` 创建，起始目录设为 quant_visual：
+
+| 任务名（参考） | 时间 | 动作 |
 |---|---|---|
 | `QMT_Daily_Viz_Refresh`（quant_fresh） | 工作日 15:35 | 成交归档 / 卖出账本 / 资金账本 |
-| `QMT_Visual_Refresh` | 工作日 15:45 | `refresh.bat` |
-| `QMT_Visual_Live_Refresh` | 工作日 09:25 | `live_refresh.bat` |
+| `QMT_Visual_Refresh` | 工作日 15:45（须在上一项之后） | `refresh.bat` |
+| `QMT_Visual_Live_Refresh` | 工作日 09:25，限时 7 小时 | `live_refresh.bat` |
 | `QMT_Visual_Web` | 登录时 | `serve.bat` |
